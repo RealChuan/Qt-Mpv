@@ -36,7 +36,6 @@ public:
     void pause();
 
 signals:
-    void mpv_events();
     void fileLoaded();
     void trackChanged();
     void positionChanged(double position); // ms

@@ -7,6 +7,9 @@ MpvWidget::MpvWidget(QWidget *parent)
 {
     setAttribute(Qt::WA_DontCreateNativeAncestors);
     setAttribute(Qt::WA_NativeWindow);
+
+    setAttribute(Qt::WA_StyledBackground);
+    setStyleSheet("QWidget{background:black;}");
 }
 
 MpvWidget::~MpvWidget() {}

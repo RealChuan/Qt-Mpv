@@ -19,7 +19,7 @@ static void wakeup(void *ctx)
     // the Qt GUI thread to wake up (so that it can process events with
     // mpv_wait_event()), and return as quickly as possible.
     auto w = (MpvPlayer *) ctx;
-    emit w->mpv_events();
+    QMetaObject::invokeMethod(w, "onMpvEvents", Qt::QueuedConnection);
 }
 
 class MpvPlayer::MpvPlayerPrivate
@@ -291,7 +291,6 @@ void MpvPlayer::initMpv(QWidget *widget)
     // From this point on, the wakeup function will be called. The callback
     // can come from any thread, so we use the QueuedConnection mechanism to
     // relay the wakeup in a thread-safe way.
-    connect(this, &MpvPlayer::mpv_events, this, &MpvPlayer::onMpvEvents, Qt::QueuedConnection);
     mpv_set_wakeup_callback(d_ptr->mpv, wakeup, this);
 
     if (mpv_initialize(d_ptr->mpv) < 0) {
