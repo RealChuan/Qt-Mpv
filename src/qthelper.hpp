@@ -303,6 +303,11 @@ static inline QVariant command_async(mpv_handle *ctx, const QVariant &args)
     return true;
 }
 
+static inline void command_abort_async(mpv_handle *ctx)
+{
+    mpv_abort_async_command(ctx, 0);
+}
+
 } // namespace qt
 }
 

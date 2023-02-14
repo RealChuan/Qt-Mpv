@@ -5,6 +5,7 @@
 #include "mpvwidget.hpp"
 #include "openwebmediadialog.hpp"
 #include "playlistmodel.h"
+#include "previewwidget.hpp"
 #include "qmediaplaylist.h"
 #include "titlewidget.hpp"
 
@@ -32,6 +33,8 @@ public:
 
         mpvPlayer = new Mpv::MpvPlayer(owner);
         mpvPlayer->initMpv(mpvWidget);
+        mpvPlayer->setPrintToStd(true);
+        mpvPlayer->setUseGpu(true);
 
         logWindow = new Mpv::MpvLogWindow(owner);
         logWindow->setMinimumSize(500, 325);
@@ -103,6 +106,7 @@ public:
 
     Mpv::MpvPlayer *mpvPlayer;
     Mpv::MpvWidget *mpvWidget;
+    QScopedPointer<Mpv::PreviewWidget> previewWidgetPtr;
     Mpv::MpvLogWindow *logWindow;
 
     ControlWidget *controlWidget;
@@ -167,6 +171,35 @@ void MainWindow::onTrackChanged()
 {
     d_ptr->controlWidget->setAudioTracks(d_ptr->mpvPlayer->audioTrackList());
     d_ptr->controlWidget->setSubTracks(d_ptr->mpvPlayer->subTrackList());
+}
+
+void MainWindow::onPreview(int pos, int value)
+{
+    auto url = d_ptr->mpvPlayer->filepath();
+    if (url.isEmpty()) {
+        return;
+    }
+    if (d_ptr->previewWidgetPtr.isNull()) {
+        d_ptr->previewWidgetPtr.reset(new Mpv::PreviewWidget);
+        d_ptr->previewWidgetPtr->setWindowFlags(d_ptr->previewWidgetPtr->windowFlags() | Qt::Tool
+                                                | Qt::FramelessWindowHint
+                                                | Qt::WindowStaysOnTopHint);
+    }
+    d_ptr->previewWidgetPtr->startPreview(url, value);
+    int w = 320;
+    int h = 200;
+    d_ptr->previewWidgetPtr->setFixedSize(w, h);
+    auto gpos = d_ptr->controlWidget->sliderGlobalPos() + QPoint(pos, 0);
+    d_ptr->previewWidgetPtr->move(gpos - QPoint(w / 2, h + 15));
+    d_ptr->previewWidgetPtr->show();
+}
+
+void MainWindow::onPreviewFinish()
+{
+    if (!d_ptr->previewWidgetPtr.isNull()) {
+        d_ptr->previewWidgetPtr->hide();
+        d_ptr->previewWidgetPtr->clearAllTask();
+    }
 }
 
 void MainWindow::playlistPositionChanged(int currentItem)
@@ -318,6 +351,8 @@ void MainWindow::buildConnect()
         d_ptr->titleWidget->setAutoHide(3000);
         d_ptr->setTitleWidgetGeometry(true);
     });
+    connect(d_ptr->controlWidget, &ControlWidget::hoverPosition, this, &MainWindow::onPreview);
+    connect(d_ptr->controlWidget, &ControlWidget::leavePosition, this, &MainWindow::onPreviewFinish);
     connect(d_ptr->controlWidget, &ControlWidget::volumeChanged, d_ptr->mpvPlayer, [this](int value) {
         d_ptr->mpvPlayer->setVolume(value);
         d_ptr->titleWidget->setText(tr("Volume: %1").arg(value));

@@ -199,10 +199,35 @@ void MpvPlayer::setAudioTrack(int aid)
     mpv::qt::set_property_async(d_ptr->mpv, "aid", aid);
 }
 
+void MpvPlayer::blockAudioTrack()
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "aid", "no");
+}
+
 void MpvPlayer::setSubTrack(int sid)
 {
     qInfo() << "sid: " << sid;
     mpv::qt::set_property_async(d_ptr->mpv, "sid", sid);
+}
+
+void MpvPlayer::blockSubTrack()
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "sid", "no");
+}
+
+void MpvPlayer::setPrintToStd(bool print)
+{
+    mpv_set_option_string(d_ptr->mpv, "terminal", print ? "yes" : "no");
+}
+
+void MpvPlayer::setCache(bool cache)
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "cahce", cache ? "auto" : "no");
+}
+
+void MpvPlayer::setUseGpu(bool use)
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "hwdec", use ? "auto-safe" : "no");
 }
 
 void MpvPlayer::setVolume(int value)
@@ -239,6 +264,11 @@ void MpvPlayer::pause()
     mpv::qt::set_property_async(d_ptr->mpv, "pause", pause_);
 }
 
+void MpvPlayer::abortAllAsyncCommands()
+{
+    mpv::qt::command_abort_async(d_ptr->mpv);
+}
+
 void MpvPlayer::onMpvEvents()
 {
     // Process all events, until the event queue is empty.
@@ -273,8 +303,6 @@ void MpvPlayer::initMpv(QWidget *widget)
     // --input-vo-keyboard on the manpage.
     mpv_set_property_string(d_ptr->mpv, "input-vo-keyboard", "yes");
 
-    // Enable hardware decoder
-    mpv_set_property_string(d_ptr->mpv, "hwdec", "auto-safe");
     // Let us receive property change events with MPV_EVENT_PROPERTY_CHANGE if
     // this property changes.
     mpv_observe_property(d_ptr->mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
@@ -292,6 +320,8 @@ void MpvPlayer::initMpv(QWidget *widget)
     // can come from any thread, so we use the QueuedConnection mechanism to
     // relay the wakeup in a thread-safe way.
     mpv_set_wakeup_callback(d_ptr->mpv, wakeup, this);
+
+    mpv_set_option_string(d_ptr->mpv, "msg-level", "all=v");
 
     if (mpv_initialize(d_ptr->mpv) < 0) {
         throw std::runtime_error("mpv failed to initialize");

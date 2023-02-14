@@ -16,6 +16,9 @@ private slots:
     void onFileLoaded();
     void onTrackChanged();
 
+    void onPreview(int pos, int value);
+    void onPreviewFinish();
+
     void playlistPositionChanged(int);
     void jump(const QModelIndex &index);
 

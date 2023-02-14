@@ -68,6 +68,11 @@ ControlWidget::ControlWidget(QWidget *parent)
 
 ControlWidget::~ControlWidget() {}
 
+QPoint ControlWidget::sliderGlobalPos() const
+{
+    return d_ptr->slider->mapToGlobal(d_ptr->slider->pos());
+}
+
 void ControlWidget::setVolume(int value)
 {
     if (value < d_ptr->volumeSlider->minimum()) {
@@ -187,6 +192,8 @@ void ControlWidget::setupUI()
 void ControlWidget::buildConnect()
 {
     connect(d_ptr->slider, &Slider::valueChanged, this, &ControlWidget::seek);
+    connect(d_ptr->slider, &Slider::onHover, this, &ControlWidget::hoverPosition);
+    connect(d_ptr->slider, &Slider::onLeave, this, &ControlWidget::leavePosition);
     connect(d_ptr->volumeSlider, &QSlider::valueChanged, this, &ControlWidget::volumeChanged);
 
     connect(d_ptr->speedCbx, &QComboBox::currentIndexChanged, this, &ControlWidget::onSpeedChanged);

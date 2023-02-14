@@ -27,13 +27,20 @@ public:
     TraskInfoList audioTrackList() const;
     TraskInfoList subTrackList() const;
     void setAudioTrack(int aid);
+    void blockAudioTrack();
     void setSubTrack(int sid);
+    void blockSubTrack();
 
+    void setPrintToStd(bool print);
+    void setCache(bool cache);
+    void setUseGpu(bool use);
     void setVolume(int value);
     void seek(qint64 seconds);
     void seekRelative(qint64 seconds);
     void setSpeed(double speed);
     void pause();
+
+    void abortAllAsyncCommands();
 
 signals:
     void fileLoaded();

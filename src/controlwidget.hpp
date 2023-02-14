@@ -12,6 +12,8 @@ public:
     explicit ControlWidget(QWidget *parent = nullptr);
     ~ControlWidget();
 
+    QPoint sliderGlobalPos() const;
+
     void setVolume(int value);
     int volume() const;
 
@@ -25,6 +27,8 @@ public slots:
 signals:
     void volumeChanged(int value);
     void seek(int value);
+    void hoverPosition(int pos, int value);
+    void leavePosition();
     void speedChanged(double);
     void audioTrackChanged(int aid);
     void subTrackChanged(int sid);
