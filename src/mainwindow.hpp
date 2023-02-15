@@ -15,6 +15,7 @@ private slots:
     void onOpenWebMedia();
     void onFileLoaded();
     void onTrackChanged();
+    void onRenderChanged(QAction *action);
 
     void onPreview(int pos, int value);
     void onPreviewFinish();

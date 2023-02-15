@@ -73,6 +73,11 @@ QPoint ControlWidget::sliderGlobalPos() const
     return d_ptr->slider->mapToGlobal(d_ptr->slider->pos());
 }
 
+void ControlWidget::setVolumeMax(int max)
+{
+    d_ptr->volumeSlider->setMaximum(max);
+}
+
 void ControlWidget::setVolume(int value)
 {
     if (value < d_ptr->volumeSlider->minimum()) {

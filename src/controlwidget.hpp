@@ -14,6 +14,7 @@ public:
 
     QPoint sliderGlobalPos() const;
 
+    void setVolumeMax(int max);
     void setVolume(int value);
     int volume() const;
 

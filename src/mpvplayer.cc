@@ -230,12 +230,24 @@ void MpvPlayer::setUseGpu(bool use)
     mpv::qt::set_property_async(d_ptr->mpv, "hwdec", use ? "auto-safe" : "no");
 }
 
+void MpvPlayer::setGpuApi(GpuApiType type)
+{
+    QString typeStr;
+    switch (type) {
+    case Opengl: typeStr = "opengl"; break;
+    case Vulkan: typeStr = "vulkan"; break;
+#ifdef Q_OS_WIN
+    case D3d11: typeStr = "d3d11"; break;
+#endif
+    default: typeStr = "auto"; break;
+    }
+    mpv::qt::set_property(d_ptr->mpv, "gpu-api", typeStr);
+    qInfo() << "GpuApi: " << typeStr;
+}
+
 void MpvPlayer::setVolume(int value)
 {
-    Q_ASSERT(value >= 0 && value <= 100);
     qInfo() << "volume: " << value;
-    auto voluma_max = mpv::qt::get_property(d_ptr->mpv, "volume-max").toInt();
-    value = voluma_max * 1.0 / 100 * value;
     mpv::qt::set_property_async(d_ptr->mpv, "volume", value);
 }
 
@@ -262,6 +274,11 @@ void MpvPlayer::pause()
     auto pause_ = !mpv::qt::get_property(d_ptr->mpv, "pause").toBool();
     qInfo() << "pause: " << pause_;
     mpv::qt::set_property_async(d_ptr->mpv, "pause", pause_);
+}
+
+int MpvPlayer::volumeMax() const
+{
+    return mpv::qt::get_property(d_ptr->mpv, "volume-max").toInt();
 }
 
 void MpvPlayer::abortAllAsyncCommands()

@@ -11,6 +11,16 @@ class MpvPlayer : public QObject
 {
     Q_OBJECT
 public:
+    enum GpuApiType {
+        Auto,
+        Opengl,
+        Vulkan,
+#ifdef Q_OS_WIN
+        D3d11
+#endif
+    };
+    Q_ENUM(GpuApiType)
+
     explicit MpvPlayer(QObject *parent = nullptr);
     ~MpvPlayer();
 
@@ -34,11 +44,14 @@ public:
     void setPrintToStd(bool print);
     void setCache(bool cache);
     void setUseGpu(bool use);
+    void setGpuApi(GpuApiType type);
     void setVolume(int value);
     void seek(qint64 seconds);
     void seekRelative(qint64 seconds);
     void setSpeed(double speed);
     void pause();
+
+    int volumeMax() const;
 
     void abortAllAsyncCommands();
 

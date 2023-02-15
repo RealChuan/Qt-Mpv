@@ -34,7 +34,6 @@ public:
         mpvPlayer = new Mpv::MpvPlayer(owner);
         mpvPlayer->initMpv(mpvWidget);
         mpvPlayer->setPrintToStd(true);
-        mpvPlayer->setUseGpu(true);
 
         logWindow = new Mpv::MpvLogWindow(owner);
         logWindow->setMinimumSize(500, 325);
@@ -51,6 +50,8 @@ public:
         playlistView->setMaximumWidth(250);
 
         menu = new QMenu(owner);
+        gpuAction = new QAction(QObject::tr("GPU Decode"), owner);
+        gpuAction->setCheckable(true);
 
         initShortcut();
     }
@@ -70,10 +71,10 @@ public:
             setTitleWidgetGeometry(true);
         });
         new QShortcut(QKeySequence::MoveToPreviousLine, owner, owner, [this] {
-            controlWidget->setVolume(controlWidget->volume() + 5);
+            controlWidget->setVolume(controlWidget->volume() + 10);
         });
         new QShortcut(QKeySequence::MoveToNextLine, owner, owner, [this] {
-            controlWidget->setVolume(controlWidget->volume() - 5);
+            controlWidget->setVolume(controlWidget->volume() - 10);
         });
         new QShortcut(Qt::Key_Space, owner, owner, [this] { mpvPlayer->pause(); });
     }
@@ -118,6 +119,7 @@ public:
     PlaylistModel *playlistModel;
 
     QMenu *menu;
+    QAction *gpuAction;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -171,6 +173,19 @@ void MainWindow::onTrackChanged()
 {
     d_ptr->controlWidget->setAudioTracks(d_ptr->mpvPlayer->audioTrackList());
     d_ptr->controlWidget->setSubTracks(d_ptr->mpvPlayer->subTrackList());
+}
+
+void MainWindow::onRenderChanged(QAction *action)
+{
+    auto value = static_cast<Mpv::MpvPlayer::GpuApiType>(action->data().toInt());
+    d_ptr->mpvPlayer->initMpv(d_ptr->mpvWidget);
+    d_ptr->mpvPlayer->setGpuApi(value);
+    d_ptr->mpvPlayer->setPrintToStd(true);
+    d_ptr->mpvPlayer->setUseGpu(d_ptr->gpuAction->isChecked());
+    auto index = d_ptr->playlistModel->playlist()->currentIndex();
+    if (index > -1) {
+        playlistPositionChanged(d_ptr->playlistModel->playlist()->currentIndex());
+    }
 }
 
 void MainWindow::onPreview(int pos, int value)
@@ -355,11 +370,13 @@ void MainWindow::buildConnect()
     connect(d_ptr->controlWidget, &ControlWidget::leavePosition, this, &MainWindow::onPreviewFinish);
     connect(d_ptr->controlWidget, &ControlWidget::volumeChanged, d_ptr->mpvPlayer, [this](int value) {
         d_ptr->mpvPlayer->setVolume(value);
-        d_ptr->titleWidget->setText(tr("Volume: %1").arg(value));
+        d_ptr->titleWidget->setText(tr("Volume: %1%").arg(value));
         d_ptr->titleWidget->setAutoHide(3000);
         d_ptr->setTitleWidgetGeometry(true);
     });
-    d_ptr->controlWidget->setVolume(50);
+    auto max = d_ptr->mpvPlayer->volumeMax();
+    d_ptr->controlWidget->setVolumeMax(max);
+    d_ptr->controlWidget->setVolume(max / 2);
     connect(d_ptr->controlWidget,
             &ControlWidget::speedChanged,
             d_ptr->mpvPlayer,
@@ -392,6 +409,28 @@ void MainWindow::initMenu()
 {
     d_ptr->menu->addAction(tr("Open Local Media"), this, &MainWindow::onOpenLocalMedia);
     d_ptr->menu->addAction(tr("Open Web Media"), this, &MainWindow::onOpenWebMedia);
+
+    d_ptr->menu->addAction(d_ptr->gpuAction);
+    connect(d_ptr->gpuAction, &QAction::toggled, d_ptr->mpvPlayer, [this](bool checked) {
+        d_ptr->mpvPlayer->setUseGpu(checked);
+    });
+    d_ptr->gpuAction->setChecked(true);
+
+    auto menu = new QMenu(tr("Render"), this);
+    auto actionGroup = new QActionGroup(this);
+    actionGroup->setExclusive(true);
+    auto metaEnum = QMetaEnum::fromType<Mpv::MpvPlayer::GpuApiType>();
+    for (int i = 0; i < metaEnum.keyCount(); i++) {
+        auto value = metaEnum.value(i);
+        auto action = new QAction(metaEnum.valueToKey(value), this);
+        action->setData(value);
+        action->setCheckable(true);
+        actionGroup->addAction(action);
+        menu->addAction(action);
+        action->setChecked(i == 0);
+    }
+    connect(actionGroup, &QActionGroup::triggered, this, &MainWindow::onRenderChanged);
+    d_ptr->menu->addMenu(menu);
 }
 
 void MainWindow::addToPlaylist(const QList<QUrl> &urls)
