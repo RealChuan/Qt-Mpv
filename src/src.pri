@@ -6,6 +6,7 @@ HEADERS += \
     $$PWD/mpvwidget.hpp \
     $$PWD/openwebmediadialog.hpp \
     $$PWD/playlistmodel.h \
+    $$PWD/playlistview.hpp \
     $$PWD/previewwidget.hpp \
     $$PWD/qmediaplaylist.h \
     $$PWD/qmediaplaylist_p.h \
@@ -24,6 +25,7 @@ SOURCES += \
     $$PWD/mpvwidget.cc \
     $$PWD/openwebmediadialog.cc \
     $$PWD/playlistmodel.cpp \
+    $$PWD/playlistview.cc \
     $$PWD/previewwidget.cc \
     $$PWD/qmediaplaylist.cpp \
     $$PWD/qplaylistfileparser.cpp \

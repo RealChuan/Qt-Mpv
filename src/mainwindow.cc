@@ -5,6 +5,7 @@
 #include "mpvwidget.hpp"
 #include "openwebmediadialog.hpp"
 #include "playlistmodel.h"
+#include "playlistview.hpp"
 #include "previewwidget.hpp"
 #include "qmediaplaylist.h"
 #include "titlewidget.hpp"
@@ -43,7 +44,7 @@ public:
         titleWidget = new TitleWidget(owner);
 
         playlistModel = new PlaylistModel(owner);
-        playlistView = new QListView(owner);
+        playlistView = new PlayListView(owner);
         playlistView->setModel(playlistModel);
         playlistView->setCurrentIndex(
             playlistModel->index(playlistModel->playlist()->currentIndex(), 0));
@@ -52,6 +53,8 @@ public:
         menu = new QMenu(owner);
         gpuAction = new QAction(QObject::tr("GPU Decode"), owner);
         gpuAction->setCheckable(true);
+
+        playListMenu = new QMenu(owner);
 
         initShortcut();
     }
@@ -115,11 +118,12 @@ public:
     TitleWidget *titleWidget;
     QRect globalTitlelWidgetGeometry;
 
-    QListView *playlistView;
+    PlayListView *playlistView;
     PlaylistModel *playlistModel;
 
     QMenu *menu;
     QAction *gpuAction;
+    QMenu *playListMenu;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -129,9 +133,11 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
     buildConnect();
     initMenu();
+    initPlayListMenu();
 
     setAttribute(Qt::WA_Hover);
     d_ptr->mpvWidget->installEventFilter(this);
+    d_ptr->playlistView->installEventFilter(this);
     installEventFilter(this);
 
     resize(1000, 650);
@@ -143,14 +149,15 @@ void MainWindow::onOpenLocalMedia()
 {
     const auto path = QStandardPaths::standardLocations(QStandardPaths::MoviesLocation)
                           .value(0, QDir::homePath());
-    const auto filePath = QFileDialog::getOpenFileUrl(this,
-                                                      tr("Open File"),
-                                                      path,
-                                                      tr("Audio Video (*.mp3 *.mp4 *.mkv *.rmvb)"));
-    if (filePath.isEmpty()) {
+    const auto filePaths
+        = QFileDialog::getOpenFileUrls(this,
+                                       tr("Open File"),
+                                       path,
+                                       tr("Audio Video (*.mp3 *.mp4 *.mkv *.rmvb)"));
+    if (filePaths.isEmpty()) {
         return;
     }
-    addToPlaylist({filePath});
+    addToPlaylist(filePaths);
 }
 
 void MainWindow::onOpenWebMedia()
@@ -269,6 +276,14 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 showFullScreen();
             }
             break;
+        default: break;
+        }
+    } else if (watched == d_ptr->playlistView) {
+        switch (event->type()) {
+        case QEvent::ContextMenu: {
+            auto e = static_cast<QContextMenuEvent *>(event);
+            d_ptr->playListMenu->exec(e->globalPos());
+        } break;
         default: break;
         }
     } else if (watched == this) {
@@ -431,6 +446,25 @@ void MainWindow::initMenu()
     }
     connect(actionGroup, &QActionGroup::triggered, this, &MainWindow::onRenderChanged);
     d_ptr->menu->addMenu(menu);
+}
+
+void MainWindow::initPlayListMenu()
+{
+    d_ptr->playListMenu->addAction(tr("Open Local Media"), this, &MainWindow::onOpenLocalMedia);
+    d_ptr->playListMenu->addAction(tr("Open Web Media"), this, &MainWindow::onOpenWebMedia);
+    d_ptr->playListMenu
+        ->addAction(tr("Remove the currently selected item"), d_ptr->playlistView, [this] {
+            auto indexs = d_ptr->playlistView->selectedAllIndexs();
+            std::sort(indexs.begin(), indexs.end(), [&](QModelIndex left, QModelIndex right) {
+                return left.row() > right.row();
+            });
+            for (const auto &index : qAsConst(indexs)) {
+                d_ptr->playlistModel->playlist()->removeMedia(index.row());
+            }
+        });
+    d_ptr->playListMenu->addAction(tr("Clear"), d_ptr->playlistView, [this] {
+        d_ptr->playlistModel->playlist()->clear();
+    });
 }
 
 void MainWindow::addToPlaylist(const QList<QUrl> &urls)

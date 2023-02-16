@@ -7,6 +7,7 @@ set(PROJECT_SOURCES
     mpvwidget.cc mpvwidget.hpp
     openwebmediadialog.cc openwebmediadialog.hpp
     playlistmodel.cpp playlistmodel.h
+    playlistview.cc playlistview.hpp
     previewwidget.cc previewwidget.hpp
     qmediaplaylist_p.h
     qmediaplaylist.cpp qmediaplaylist.h
