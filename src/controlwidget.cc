@@ -28,20 +28,6 @@ public:
             i += 0.25;
         }
         speedCbx->setCurrentText("1");
-
-        audioTracksCbx = new QComboBox(owner);
-        audioTracksCbx->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-        auto audioTracksView = new QListView(audioTracksCbx);
-        audioTracksView->setTextElideMode(Qt::ElideRight);
-        audioTracksView->setAlternatingRowColors(true);
-        audioTracksCbx->setView(audioTracksView);
-
-        subTracksCbx = new QComboBox(owner);
-        subTracksCbx->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-        auto subtitleStreamsView = new QListView(subTracksCbx);
-        subtitleStreamsView->setTextElideMode(Qt::ElideRight);
-        subtitleStreamsView->setAlternatingRowColors(true);
-        subTracksCbx->setView(subtitleStreamsView);
     }
 
     ControlWidget *owner;
@@ -51,8 +37,6 @@ public:
     QLabel *durationLabel;
     Slider *volumeSlider;
     QComboBox *speedCbx;
-    QComboBox *audioTracksCbx;
-    QComboBox *subTracksCbx;
 };
 
 ControlWidget::ControlWidget(QWidget *parent)
@@ -93,34 +77,6 @@ int ControlWidget::volume() const
     return d_ptr->volumeSlider->value();
 }
 
-void ControlWidget::setAudioTracks(const TraskInfoList &list)
-{
-    d_ptr->audioTracksCbx->blockSignals(true);
-    d_ptr->audioTracksCbx->clear();
-    for (const auto &audio : qAsConst(list)) {
-        auto text = audio.text();
-        d_ptr->audioTracksCbx->addItem(text, QVariant::fromValue(audio));
-        if (audio.selected) {
-            d_ptr->audioTracksCbx->setCurrentText(text);
-        }
-    }
-    d_ptr->audioTracksCbx->blockSignals(false);
-}
-
-void ControlWidget::setSubTracks(const TraskInfoList &list)
-{
-    d_ptr->subTracksCbx->blockSignals(true);
-    d_ptr->subTracksCbx->clear();
-    for (const auto &sub : qAsConst(list)) {
-        auto text = sub.text();
-        d_ptr->subTracksCbx->addItem(sub.text(), QVariant::fromValue(sub));
-        if (sub.selected) {
-            d_ptr->subTracksCbx->setCurrentText(text);
-        }
-    }
-    d_ptr->subTracksCbx->blockSignals(false);
-}
-
 void ControlWidget::onDurationChanged(double value)
 {
     auto str = QTime::fromMSecsSinceStartOfDay(value * 1000).toString("hh:mm:ss");
@@ -147,18 +103,6 @@ void ControlWidget::onSpeedChanged()
     emit speedChanged(data);
 }
 
-void ControlWidget::onAudioTrackChanged()
-{
-    auto data = d_ptr->audioTracksCbx->currentData().value<Mpv::TraskInfo>();
-    emit audioTrackChanged(data.id);
-}
-
-void ControlWidget::onSubTrackChanged()
-{
-    auto data = d_ptr->subTracksCbx->currentData().value<Mpv::TraskInfo>();
-    emit subTrackChanged(data.id);
-}
-
 void ControlWidget::setupUI()
 {
     auto processWidget = new QWidget(this);
@@ -177,10 +121,6 @@ void ControlWidget::setupUI()
     controlLayout->addWidget(d_ptr->volumeSlider);
     controlLayout->addWidget(new QLabel(tr("Speed: "), this));
     controlLayout->addWidget(d_ptr->speedCbx);
-    controlLayout->addWidget(new QLabel(tr("Audio Tracks: "), this));
-    controlLayout->addWidget(d_ptr->audioTracksCbx);
-    controlLayout->addWidget(new QLabel(tr("Subtitle Tracks: "), this));
-    controlLayout->addWidget(d_ptr->subTracksCbx);
     controlLayout->addWidget(listButton);
 
     auto widget = new QWidget(this);
@@ -202,13 +142,4 @@ void ControlWidget::buildConnect()
     connect(d_ptr->volumeSlider, &QSlider::valueChanged, this, &ControlWidget::volumeChanged);
 
     connect(d_ptr->speedCbx, &QComboBox::currentIndexChanged, this, &ControlWidget::onSpeedChanged);
-
-    connect(d_ptr->audioTracksCbx,
-            &QComboBox::currentIndexChanged,
-            this,
-            &ControlWidget::onAudioTrackChanged);
-    connect(d_ptr->subTracksCbx,
-            &QComboBox::currentIndexChanged,
-            this,
-            &ControlWidget::onSubTrackChanged);
 }

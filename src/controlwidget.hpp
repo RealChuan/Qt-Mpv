@@ -1,8 +1,6 @@
 #ifndef CONTROLWIDGET_HPP
 #define CONTROLWIDGET_HPP
 
-#include "trackinfo.hpp"
-
 #include <QWidget>
 
 class ControlWidget : public QWidget
@@ -18,9 +16,6 @@ public:
     void setVolume(int value);
     int volume() const;
 
-    void setAudioTracks(const TraskInfoList &list);
-    void setSubTracks(const TraskInfoList &list);
-
 public slots:
     void onDurationChanged(double value);
     void onPositionChanged(double value);
@@ -31,14 +26,10 @@ signals:
     void hoverPosition(int pos, int value);
     void leavePosition();
     void speedChanged(double);
-    void audioTrackChanged(int aid);
-    void subTrackChanged(int sid);
     void showList();
 
 private slots:
     void onSpeedChanged();
-    void onAudioTrackChanged();
-    void onSubTrackChanged();
 
 private:
     void setupUI();

@@ -9,6 +9,7 @@
 #include "previewwidget.hpp"
 #include "qmediaplaylist.h"
 #include "titlewidget.hpp"
+#include "trackinfo.hpp"
 
 #include <QtWidgets>
 
@@ -53,6 +54,12 @@ public:
         menu = new QMenu(owner);
         gpuAction = new QAction(QObject::tr("GPU Decode"), owner);
         gpuAction->setCheckable(true);
+        audioTracksMenu = new QMenu(QObject::tr("Select audio track"), owner);
+        subTracksMenu = new QMenu(QObject::tr("Select subtitle track"), owner);
+        audioTracksGroup = new QActionGroup(owner);
+        audioTracksGroup->setExclusive(true);
+        subTracksGroup = new QActionGroup(owner);
+        subTracksGroup->setExclusive(true);
 
         playListMenu = new QMenu(owner);
 
@@ -123,6 +130,11 @@ public:
 
     QMenu *menu;
     QAction *gpuAction;
+    QMenu *audioTracksMenu;
+    QMenu *subTracksMenu;
+    QActionGroup *audioTracksGroup;
+    QActionGroup *subTracksGroup;
+
     QMenu *playListMenu;
 };
 
@@ -178,8 +190,35 @@ void MainWindow::onFileLoaded()
 
 void MainWindow::onTrackChanged()
 {
-    d_ptr->controlWidget->setAudioTracks(d_ptr->mpvPlayer->audioTrackList());
-    d_ptr->controlWidget->setSubTracks(d_ptr->mpvPlayer->subTrackList());
+    auto audioTrackList = d_ptr->mpvPlayer->audioTrackList();
+    qDeleteAll(d_ptr->audioTracksGroup->actions());
+    if (audioTrackList.size() > 1) {
+        for (const auto &item : qAsConst(audioTrackList)) {
+            auto action = new QAction(item.text(), this);
+            action->setData(QVariant::fromValue(item));
+            action->setCheckable(true);
+            d_ptr->audioTracksMenu->addAction(action);
+            d_ptr->audioTracksGroup->addAction(action);
+            if (item.selected) {
+                action->setChecked(true);
+            }
+        }
+    }
+
+    auto subTrackList = d_ptr->mpvPlayer->subTrackList();
+    qDeleteAll(d_ptr->subTracksGroup->actions());
+    if (subTrackList.size() > 1) {
+        for (const auto &item : qAsConst(subTrackList)) {
+            auto action = new QAction(item.text(), this);
+            action->setData(QVariant::fromValue(item));
+            action->setCheckable(true);
+            d_ptr->subTracksMenu->addAction(action);
+            d_ptr->subTracksGroup->addAction(action);
+            if (item.selected) {
+                action->setChecked(true);
+            }
+        }
+    }
 }
 
 void MainWindow::onRenderChanged(QAction *action)
@@ -401,14 +440,6 @@ void MainWindow::buildConnect()
                 d_ptr->titleWidget->setAutoHide(3000);
                 d_ptr->setTitleWidgetGeometry(true);
             });
-    connect(d_ptr->controlWidget,
-            &ControlWidget::audioTrackChanged,
-            d_ptr->mpvPlayer,
-            [this](int aid) { d_ptr->mpvPlayer->setAudioTrack(aid); });
-    connect(d_ptr->controlWidget,
-            &ControlWidget::subTrackChanged,
-            d_ptr->mpvPlayer,
-            [this](int aid) { d_ptr->mpvPlayer->setSubTrack(aid); });
     connect(d_ptr->controlWidget, &ControlWidget::showList, d_ptr->playlistView, [this] {
         d_ptr->playlistView->setVisible(!d_ptr->playlistView->isVisible());
     });
@@ -446,6 +477,17 @@ void MainWindow::initMenu()
     }
     connect(actionGroup, &QActionGroup::triggered, this, &MainWindow::onRenderChanged);
     d_ptr->menu->addMenu(menu);
+
+    d_ptr->menu->addMenu(d_ptr->audioTracksMenu);
+    d_ptr->menu->addMenu(d_ptr->subTracksMenu);
+    connect(d_ptr->audioTracksGroup, &QActionGroup::triggered, this, [this](QAction *action) {
+        auto data = action->data().value<Mpv::TraskInfo>();
+        d_ptr->mpvPlayer->setAudioTrack(data.id);
+    });
+    connect(d_ptr->subTracksGroup, &QActionGroup::triggered, this, [this](QAction *action) {
+        auto data = action->data().value<Mpv::TraskInfo>();
+        d_ptr->mpvPlayer->setSubTrack(data.id);
+    });
 }
 
 void MainWindow::initPlayListMenu()
