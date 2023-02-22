@@ -52,7 +52,7 @@ public:
         playlistView->setMaximumWidth(250);
 
         menu = new QMenu(owner);
-        gpuAction = new QAction(QObject::tr("GPU Decode"), owner);
+        gpuAction = new QAction(QObject::tr("H/W"), owner);
         gpuAction->setCheckable(true);
         audioTracksMenu = new QMenu(QObject::tr("Select audio track"), owner);
         subTracksMenu = new QMenu(QObject::tr("Select subtitle track"), owner);
