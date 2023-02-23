@@ -49,7 +49,7 @@ public:
         playlistView->setModel(playlistModel);
         playlistView->setCurrentIndex(
             playlistModel->index(playlistModel->playlist()->currentIndex(), 0));
-        playlistView->setMaximumWidth(250);
+        //playlistView->setMaximumWidth(250);
 
         menu = new QMenu(owner);
         gpuAction = new QAction(QObject::tr("H/W"), owner);
@@ -389,14 +389,12 @@ void MainWindow::keyPressEvent(QKeyEvent *ev)
 
 void MainWindow::setupUI()
 {
-    auto widget = new QWidget(this);
-    auto layout = new QHBoxLayout(widget);
-    layout->setContentsMargins(QMargins());
-    layout->setSpacing(0);
-    layout->addWidget(d_ptr->mpvWidget);
-    layout->addWidget(d_ptr->playlistView);
+    auto splitter = new QSplitter(this);
+    splitter->addWidget(d_ptr->mpvWidget);
+    splitter->addWidget(d_ptr->playlistView);
+    splitter->setSizes({200, 1});
 
-    setCentralWidget(widget);
+    setCentralWidget(splitter);
 }
 
 void MainWindow::buildConnect()
