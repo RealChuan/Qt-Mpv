@@ -1,6 +1,6 @@
-QT       += core gui multimedia network widgets
+QT       += core gui multimedia network widgets openglwidgets
 
-CONFIG += c++17
+CONFIG += c++17 sdk_no_version_check
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig debug

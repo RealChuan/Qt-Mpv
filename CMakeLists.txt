@@ -51,7 +51,7 @@ LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/bin${CURRENT_PLATFORM}/${CMAKE_BUILD_TYPE
 
 include_directories( ${PROJECT_SOURCE_DIR} )
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network Multimedia OpenGLWidgets)
 
 IF (CMAKE_HOST_WIN32)
     include_directories("C:\\3rd\\mpv\\include") 

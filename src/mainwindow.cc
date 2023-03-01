@@ -1,6 +1,7 @@
 #include "mainwindow.hpp"
 #include "controlwidget.hpp"
 #include "mpvlogwindow.hpp"
+#include "mpvopenglwidget.hpp"
 #include "mpvplayer.hpp"
 #include "mpvwidget.hpp"
 #include "openwebmediadialog.hpp"
@@ -29,17 +30,22 @@ public:
     MainWindowPrivate(MainWindow *parent)
         : owner(parent)
     {
+        mpvPlayer = new Mpv::MpvPlayer(owner);
+#if defined(Q_OS_WIN)
         mpvWidget = new Mpv::MpvWidget(owner);
+        mpvPlayer->initMpv(mpvWidget);
+#elif defined(Q_OS_MACOS)
+        mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, owner);
+        mpvPlayer->initMpv(nullptr);
+#endif
         mpvWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         mpvWidget->setAcceptDrops(true);
-
-        mpvPlayer = new Mpv::MpvPlayer(owner);
-        mpvPlayer->initMpv(mpvWidget);
         mpvPlayer->setPrintToStd(true);
 
         logWindow = new Mpv::MpvLogWindow(owner);
         logWindow->setMinimumSize(500, 325);
         logWindow->show();
+        logWindow->move(0, 0);
 
         controlWidget = new ControlWidget(owner);
         titleWidget = new TitleWidget(owner);
@@ -116,7 +122,7 @@ public:
     MainWindow *owner;
 
     Mpv::MpvPlayer *mpvPlayer;
-    Mpv::MpvWidget *mpvWidget;
+    QWidget *mpvWidget;
     QScopedPointer<Mpv::PreviewWidget> previewWidgetPtr;
     Mpv::MpvLogWindow *logWindow;
 
@@ -155,7 +161,10 @@ MainWindow::MainWindow(QWidget *parent)
     resize(1000, 650);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+    delete d_ptr->mpvWidget;
+}
 
 void MainWindow::onOpenLocalMedia()
 {
@@ -236,6 +245,9 @@ void MainWindow::onRenderChanged(QAction *action)
 
 void MainWindow::onPreview(int pos, int value)
 {
+#ifdef Q_OS_MACOS
+    return;
+#endif
     auto url = d_ptr->mpvPlayer->filepath();
     if (url.isEmpty()) {
         return;
@@ -459,7 +471,7 @@ void MainWindow::initMenu()
         d_ptr->mpvPlayer->setUseGpu(checked);
     });
     d_ptr->gpuAction->setChecked(true);
-
+#ifdef Q_OS_WIN
     auto menu = new QMenu(tr("Render"), this);
     auto actionGroup = new QActionGroup(this);
     actionGroup->setExclusive(true);
@@ -475,7 +487,7 @@ void MainWindow::initMenu()
     }
     connect(actionGroup, &QActionGroup::triggered, this, &MainWindow::onRenderChanged);
     d_ptr->menu->addMenu(menu);
-
+#endif
     d_ptr->menu->addMenu(d_ptr->audioTracksMenu);
     d_ptr->menu->addMenu(d_ptr->subTracksMenu);
     connect(d_ptr->audioTracksGroup, &QActionGroup::triggered, this, [this](QAction *action) {

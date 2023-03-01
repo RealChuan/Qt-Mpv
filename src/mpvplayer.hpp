@@ -5,6 +5,8 @@
 
 #include <QObject>
 
+struct mpv_handle;
+
 namespace Mpv {
 
 class MpvPlayer : public QObject
@@ -54,6 +56,10 @@ public:
     int volumeMax() const;
 
     void abortAllAsyncCommands();
+
+    void destroy();
+
+    mpv_handle *mpv_handle();
 
 signals:
     void fileLoaded();

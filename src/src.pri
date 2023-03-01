@@ -2,6 +2,7 @@ HEADERS += \
     $$PWD/controlwidget.hpp \
     $$PWD/mainwindow.hpp \
     $$PWD/mpvlogwindow.hpp \
+    $$PWD/mpvopenglwidget.hpp \
     $$PWD/mpvplayer.hpp \
     $$PWD/mpvwidget.hpp \
     $$PWD/openwebmediadialog.hpp \
@@ -21,6 +22,7 @@ SOURCES += \
     $$PWD/main.cc \
     $$PWD/mainwindow.cc \
     $$PWD/mpvlogwindow.cc \
+    $$PWD/mpvopenglwidget.cc \
     $$PWD/mpvplayer.cc \
     $$PWD/mpvwidget.cc \
     $$PWD/openwebmediadialog.cc \

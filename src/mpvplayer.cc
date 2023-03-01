@@ -134,7 +134,7 @@ public:
 
     MpvPlayer *owner;
 
-    mpv_handle *mpv = nullptr;
+    struct mpv_handle *mpv = nullptr;
     TraskInfoList audioTrackList;
     TraskInfoList subTrackList;
     double position = 0;
@@ -284,6 +284,16 @@ int MpvPlayer::volumeMax() const
 void MpvPlayer::abortAllAsyncCommands()
 {
     mpv::qt::command_abort_async(d_ptr->mpv);
+}
+
+void MpvPlayer::destroy()
+{
+    d_ptr->destroy();
+}
+
+mpv_handle *MpvPlayer::mpv_handle()
+{
+    return d_ptr->mpv;
 }
 
 void MpvPlayer::onMpvEvents()
