@@ -6,8 +6,16 @@ QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig debug
 #PKGCONFIG += mpv
 
-INCLUDEPATH += C:/3rd/mpv/include
-LIBS += C:/3rd/mpv/libmpv.dll.a
+win32 {
+    INCLUDEPATH += C:/3rd/mpv/include
+    LIBS += C:/3rd/mpv/libmpv.dll.a
+}
+
+macx {
+    INCLUDEPATH += /usr/local/include
+    LIBS += -L/usr/lib -L/usr/local/lib
+    LIBS += -lmpv -lz
+}
 
 contains(QT_ARCH, i386) {
     BIN = bin-32
