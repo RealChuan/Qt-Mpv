@@ -45,7 +45,7 @@ public:
         logWindow = new Mpv::MpvLogWindow(owner);
         logWindow->setMinimumSize(500, 325);
         logWindow->show();
-        logWindow->move(0, 0);
+        logWindow->move(qApp->primaryScreen()->availableGeometry().topLeft());
 
         controlWidget = new ControlWidget(owner);
         titleWidget = new TitleWidget(owner);
@@ -357,7 +357,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     e->globalPosition().toPoint());
                 bool isVisible = d_ptr->controlWidget->isVisible();
                 if (contain && !isVisible) {
-                    d_ptr->controlWidget->show();
+                    d_ptr->setControlWidgetGeometry(true);
                 } else if (!contain && isVisible) {
                     d_ptr->controlWidget->hide();
                 }
@@ -369,7 +369,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 bool isVisible = d_ptr->titleWidget->isVisible();
                 if (contain && !isVisible) {
                     d_ptr->titleWidget->setText(windowTitle());
-                    d_ptr->titleWidget->show();
+                    d_ptr->setTitleWidgetGeometry(true);
                 } else if (!contain && isVisible) {
                     d_ptr->titleWidget->hide();
                 }
@@ -402,6 +402,7 @@ void MainWindow::keyPressEvent(QKeyEvent *ev)
 void MainWindow::setupUI()
 {
     auto splitter = new QSplitter(this);
+    splitter->setHandleWidth(0);
     splitter->addWidget(d_ptr->mpvWidget);
     splitter->addWidget(d_ptr->playlistView);
     splitter->setSizes({200, 1});
@@ -498,6 +499,10 @@ void MainWindow::initMenu()
         auto data = action->data().value<Mpv::TraskInfo>();
         d_ptr->mpvPlayer->setSubTrack(data.id);
     });
+#ifdef Q_OS_MACOS
+    d_ptr->menu->setTitle(tr("Menu"));
+    menuBar()->addMenu(d_ptr->menu);
+#endif
 }
 
 void MainWindow::initPlayListMenu()

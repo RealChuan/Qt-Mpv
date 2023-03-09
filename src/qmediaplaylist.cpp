@@ -391,6 +391,9 @@ void QMediaPlaylist::clear()
 {
     Q_D(QMediaPlaylist);
     int size = d->playlist.size();
+    if (size <= 0) {
+        return;
+    }
     emit mediaAboutToBeRemoved(0, size - 1);
     d->playlist.clear();
     emit mediaRemoved(0, size - 1);

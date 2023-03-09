@@ -143,7 +143,9 @@ public:
 MpvPlayer::MpvPlayer(QObject *parent)
     : QObject{parent}
     , d_ptr(new MpvPlayerPrivate(this))
-{}
+{
+    qInfo() << mpv_client_api_version();
+}
 
 MpvPlayer::~MpvPlayer() {}
 
@@ -228,6 +230,7 @@ void MpvPlayer::setCache(bool cache)
 void MpvPlayer::setUseGpu(bool use)
 {
     mpv::qt::set_property_async(d_ptr->mpv, "hwdec", use ? "auto-safe" : "no");
+    //mpv::qt::set_property_async(d_ptr->mpv, "d3d11va-zero-copy", "yes");
 }
 
 void MpvPlayer::setGpuApi(GpuApiType type)
@@ -311,17 +314,17 @@ void MpvPlayer::onMpvEvents()
 void MpvPlayer::initMpv(QWidget *widget)
 {
     d_ptr->init();
-
-    auto raw_wid = widget->winId();
+    if (widget) {
+        auto raw_wid = widget->winId();
 #ifdef _WIN32
-    // Truncate to 32-bit, as all Windows handles are. This also ensures
-    // it doesn't go negative.
-    int64_t wid = static_cast<uint32_t>(raw_wid);
+        // Truncate to 32-bit, as all Windows handles are. This also ensures
+        // it doesn't go negative.
+        int64_t wid = static_cast<uint32_t>(raw_wid);
 #else
-    int64_t wid = raw_wid;
+        int64_t wid = raw_wid;
 #endif
-    mpv_set_property(d_ptr->mpv, "wid", MPV_FORMAT_INT64, &wid);
-
+        mpv_set_property(d_ptr->mpv, "wid", MPV_FORMAT_INT64, &wid);
+    }
     // Enable default bindings, because we're lazy. Normally, a player using
     // mpv as backend would implement its own key bindings.
     mpv_set_property_string(d_ptr->mpv, "input-default-bindings", "yes");
