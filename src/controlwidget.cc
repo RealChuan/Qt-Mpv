@@ -3,6 +3,25 @@
 
 #include <QtWidgets>
 
+QString bytesToString(qint64 bytes)
+{
+    const double KB = 1024 * 1.0;
+    const double MB = KB * 1024;
+    const double GB = MB * 1024;
+    const double TB = GB * 1024;
+
+    if (bytes / TB >= 1)
+        return QString("%1TB").arg(QString::number(bytes / TB, 'f', 1));
+    else if (bytes / GB >= 1)
+        return QString("%1GB").arg(QString::number(bytes / GB, 'f', 1));
+    else if (bytes / MB >= 1)
+        return QString("%1MB").arg(QString::number(bytes / MB, 'f', 1));
+    else if (bytes / KB >= 1)
+        return QString("%1KB").arg(qint64(bytes / KB));
+    else
+        return QString("%1B").arg(bytes);
+}
+
 class ControlWidget::ControlWidgetPrivate
 {
 public:
@@ -15,6 +34,8 @@ public:
 
         volumeSlider = new Slider(owner);
         volumeSlider->setRange(0, 100);
+
+        cacheSpeedLabel = new QLabel(owner);
 
         speedCbx = new QComboBox(owner);
         auto speedCbxView = new QListView(speedCbx);
@@ -35,6 +56,7 @@ public:
     Slider *slider;
     QLabel *positionLabel;
     QLabel *durationLabel;
+    QLabel *cacheSpeedLabel;
     Slider *volumeSlider;
     QComboBox *speedCbx;
 };
@@ -97,6 +119,11 @@ void ControlWidget::onPositionChanged(double value)
     d_ptr->slider->blockSignals(false);
 }
 
+void ControlWidget::onCacheSpeedChanged(int64_t cache_speed)
+{
+    d_ptr->cacheSpeedLabel->setText(bytesToString(cache_speed) + "/S");
+}
+
 void ControlWidget::onSpeedChanged()
 {
     auto data = d_ptr->speedCbx->currentData().toDouble();
@@ -117,6 +144,8 @@ void ControlWidget::setupUI()
     connect(listButton, &QToolButton::clicked, this, &ControlWidget::showList);
 
     auto controlLayout = new QHBoxLayout;
+    controlLayout->addWidget(d_ptr->cacheSpeedLabel);
+    controlLayout->addStretch();
     controlLayout->addWidget(new QLabel(tr("Volume: "), this));
     controlLayout->addWidget(d_ptr->volumeSlider);
     controlLayout->addWidget(new QLabel(tr("Speed: "), this));
@@ -125,7 +154,8 @@ void ControlWidget::setupUI()
 
     auto widget = new QWidget(this);
     widget->setObjectName("wid");
-    widget->setStyleSheet("QWidget#wid{background: rgba(255,255,255,0.3);}");
+    widget->setStyleSheet("QWidget#wid{background: rgba(255,255,255,0.3);}"
+                          "QLabel{ color: white; }");
     auto layout = new QVBoxLayout(widget);
     layout->addWidget(processWidget);
     layout->addLayout(controlLayout);

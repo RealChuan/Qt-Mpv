@@ -19,6 +19,7 @@ public:
 public slots:
     void onDurationChanged(double value);
     void onPositionChanged(double value);
+    void onCacheSpeedChanged(int64_t cache_speed);
 
 signals:
     void volumeChanged(int value);

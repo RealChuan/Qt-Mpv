@@ -66,6 +66,7 @@ signals:
     void trackChanged();
     void positionChanged(double position); // ms
     void mpvLogMessage(const QString &log);
+    void cacheSpeedChanged(int64_t);
 
 private slots:
     void onMpvEvents();

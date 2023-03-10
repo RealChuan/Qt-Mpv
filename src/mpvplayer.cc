@@ -95,6 +95,11 @@ public:
                     }
                     emit owner->trackChanged();
                 }
+            } else if (strcmp(prop->name, "cache-speed") == 0) {
+                if (prop->format == MPV_FORMAT_INT64) {
+                    cache_speed = *(int64_t *) prop->data;
+                    emit owner->cacheSpeedChanged(cache_speed);
+                }
             }
             break;
         }
@@ -138,6 +143,7 @@ public:
     TraskInfoList audioTrackList;
     TraskInfoList subTrackList;
     double position = 0;
+    int64_t cache_speed = 0;
 };
 
 MpvPlayer::MpvPlayer(QObject *parent)
@@ -336,6 +342,7 @@ void MpvPlayer::initMpv(QWidget *widget)
     // Let us receive property change events with MPV_EVENT_PROPERTY_CHANGE if
     // this property changes.
     mpv_observe_property(d_ptr->mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(d_ptr->mpv, 0, "cache-speed", MPV_FORMAT_INT64);
 
     mpv_observe_property(d_ptr->mpv, 0, "track-list", MPV_FORMAT_NODE);
     mpv_observe_property(d_ptr->mpv, 0, "chapter-list", MPV_FORMAT_NODE);

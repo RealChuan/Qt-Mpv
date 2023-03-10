@@ -422,6 +422,10 @@ void MainWindow::buildConnect()
             &Mpv::MpvPlayer::mpvLogMessage,
             d_ptr->logWindow,
             &Mpv::MpvLogWindow::onAppendLog);
+    connect(d_ptr->mpvPlayer,
+            &Mpv::MpvPlayer::cacheSpeedChanged,
+            d_ptr->controlWidget,
+            &ControlWidget::onCacheSpeedChanged);
 
     connect(d_ptr->controlWidget, &ControlWidget::seek, d_ptr->mpvPlayer, [this](int value) {
         d_ptr->mpvPlayer->seek(value);

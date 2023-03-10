@@ -9,8 +9,8 @@ public:
         : owner(parent)
     {
         label = new QLabel(owner);
-        label->setStyleSheet(
-            "QLabel{background: rgba(255,255,255,0.3); padding-left: 20px; padding-right: 20px;}");
+        label->setStyleSheet("QLabel{background: rgba(255,255,255,0.3); padding-left: 20px; "
+                             "padding-right: 20px; color: white;}");
         timer = new QTimer(owner);
         timer->setSingleShot(true);
     }
