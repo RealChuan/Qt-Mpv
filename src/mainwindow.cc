@@ -55,6 +55,7 @@ public:
         playlistView->setModel(playlistModel);
         playlistView->setCurrentIndex(
             playlistModel->index(playlistModel->playlist()->currentIndex(), 0));
+        playlistModel->playlist()->setPlaybackMode(QMediaPlaylist::PlaybackMode::Loop);
         //playlistView->setMaximumWidth(250);
 
         menu = new QMenu(owner);
@@ -413,6 +414,9 @@ void MainWindow::setupUI()
 void MainWindow::buildConnect()
 {
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileLoaded, this, &MainWindow::onFileLoaded);
+    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileFinished, [this] {
+        d_ptr->playlistModel->playlist()->next();
+    });
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::trackChanged, this, &MainWindow::onTrackChanged);
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::positionChanged,

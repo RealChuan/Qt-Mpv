@@ -63,6 +63,7 @@ public:
 
 signals:
     void fileLoaded();
+    void fileFinished();
     void trackChanged();
     void positionChanged(double position); // ms
     void mpvLogMessage(const QString &log);

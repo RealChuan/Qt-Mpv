@@ -131,6 +131,12 @@ public:
             mpv = NULL;
             break;
         case MPV_EVENT_FILE_LOADED: emit owner->fileLoaded(); break;
+        case MPV_EVENT_END_FILE: {
+            auto prop = (mpv_event_end_file *) event->data;
+            if (prop->reason == MPV_END_FILE_REASON_EOF) {
+                emit owner->fileFinished();
+            }
+        } break;
         default:
             break;
             // Ignore uninteresting or unknown events.
