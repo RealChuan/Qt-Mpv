@@ -192,6 +192,28 @@ void MainWindow::onOpenWebMedia()
     addToPlaylist({QUrl(dialog.url())});
 }
 
+void MainWindow::onLoadSubtitleFiles()
+{
+    auto path = d_ptr->mpvPlayer->filepath();
+    if (path.isEmpty()) {
+        return;
+    }
+    if (QFile::exists(path)) {
+        path = QFileInfo(path).absolutePath();
+    } else {
+        path = QStandardPaths::standardLocations(QStandardPaths::MoviesLocation)
+                   .value(0, QDir::homePath());
+    }
+    const auto filePaths = QFileDialog::getOpenFileNames(this,
+                                                         tr("Open File"),
+                                                         path,
+                                                         tr("Subtitle (*.srt *.ass)"));
+    if (filePaths.isEmpty()) {
+        return;
+    }
+    d_ptr->mpvPlayer->addSub(filePaths);
+}
+
 void MainWindow::onFileLoaded()
 {
     setWindowTitle(d_ptr->mpvPlayer->filename());
@@ -474,6 +496,7 @@ void MainWindow::initMenu()
 {
     d_ptr->menu->addAction(tr("Open Local Media"), this, &MainWindow::onOpenLocalMedia);
     d_ptr->menu->addAction(tr("Open Web Media"), this, &MainWindow::onOpenWebMedia);
+    d_ptr->menu->addAction(tr("Load Subtitle Files"), this, &MainWindow::onLoadSubtitleFiles);
 
     d_ptr->menu->addAction(d_ptr->gpuAction);
     connect(d_ptr->gpuAction, &QAction::toggled, d_ptr->mpvPlayer, [this](bool checked) {

@@ -13,6 +13,7 @@ public:
 private slots:
     void onOpenLocalMedia();
     void onOpenWebMedia();
+    void onLoadSubtitleFiles();
     void onFileLoaded();
     void onTrackChanged();
     void onRenderChanged(QAction *action);

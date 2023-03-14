@@ -229,6 +229,13 @@ void MpvPlayer::blockSubTrack()
     mpv::qt::set_property_async(d_ptr->mpv, "sid", "no");
 }
 
+void MpvPlayer::addSub(const QStringList &paths)
+{
+    for (const auto &path : qAsConst(paths)) {
+        mpv::qt::command_async(d_ptr->mpv, QVariantList() << "sub-add" << path);
+    }
+}
+
 void MpvPlayer::setPrintToStd(bool print)
 {
     mpv_set_option_string(d_ptr->mpv, "terminal", print ? "yes" : "no");

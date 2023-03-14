@@ -42,6 +42,7 @@ public:
     void blockAudioTrack();
     void setSubTrack(int sid);
     void blockSubTrack();
+    void addSub(const QStringList &paths);
 
     void setPrintToStd(bool print);
     void setCache(bool cache);
