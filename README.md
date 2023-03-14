@@ -16,4 +16,22 @@
 
 但是使用 `vo=libmpv`也无法正常显示视频；
 
+使用opengl的版本大于3，性能更好；
+
+```cpp
+QSurfaceFormat surfaceFormat;
+surfaceFormat.setVersion(3, 3);
+surfaceFormat.setProfile(QSurfaceFormat::CoreProfile);
+setFormat(surfaceFormat);
+QSurfaceFormat::setDefaultFormat(surfaceFormat);
+```
+
+## MacOS打包需要[install_name_tool](/mac/change_lib_dependencies.rb)，依赖拷贝脚本文件来自[iina](https://github.com/iina/iina/blob/develop/other/change_lib_dependencies.rb)；
+
+```shell
+./mac/change_lib_dependencies.rb "$(brew --prefix)" "$(brew --prefix mpv-iina)/lib/libmpv.dylib"
+```
+
+依赖会拷贝到 `packet/Qt-Mpv.app/Contents/Frameworks/`；
+
 <div align=center><img src="doc/player.jpeg"></div>

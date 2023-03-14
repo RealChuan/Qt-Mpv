@@ -92,7 +92,7 @@ void PlaylistModel::beginRemoveItems(int start, int end)
 
 void PlaylistModel::endRemoveItems()
 {
-    endInsertRows();
+    endRemoveRows();
 }
 
 void PlaylistModel::changeItems(int start, int end)
