@@ -293,9 +293,15 @@ void MpvPlayer::setSpeed(double speed)
 
 void MpvPlayer::pause()
 {
-    auto pause_ = !mpv::qt::get_property(d_ptr->mpv, "pause").toBool();
+    auto pause_ = !pausing();
     qInfo() << "pause: " << pause_;
     mpv::qt::set_property_async(d_ptr->mpv, "pause", pause_);
+    emit pauseStateChanged(pause_);
+}
+
+bool MpvPlayer::pausing()
+{
+    return mpv::qt::get_property(d_ptr->mpv, "pause").toBool();
 }
 
 int MpvPlayer::volumeMax() const

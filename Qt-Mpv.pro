@@ -14,7 +14,7 @@ win32 {
 macx {
     INCLUDEPATH += /usr/local/include
     LIBS += -L/usr/lib -L/usr/local/lib
-    LIBS += -lmpv -lz
+    LIBS += -lmpv
 }
 
 contains(QT_ARCH, i386) {
@@ -32,3 +32,6 @@ CONFIG(debug, debug|release) {
 DESTDIR = $$APP_OUTPUT_PATH
 
 include(src/src.pri)
+
+DISTFILES += \
+    README.md

@@ -53,6 +53,7 @@ public:
     void seekRelative(qint64 seconds);
     void setSpeed(double speed);
     void pause();
+    bool pausing();
 
     int volumeMax() const;
 
@@ -68,6 +69,7 @@ signals:
     void trackChanged();
     void positionChanged(double position); // ms
     void mpvLogMessage(const QString &log);
+    void pauseStateChanged(bool state);
     void cacheSpeedChanged(int64_t);
 
 private slots:

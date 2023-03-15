@@ -55,6 +55,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network Multimedia OpenGLWidgets)
 
 IF (CMAKE_HOST_WIN32)
     include_directories("C:\\3rd\\mpv\\include") 
+ELSEIF(CMAKE_HOST_APPLE)
+    include_directories("/usr/local/include") 
 ENDIF ()
 
 add_subdirectory(src)

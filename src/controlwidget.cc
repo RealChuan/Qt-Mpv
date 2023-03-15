@@ -1,6 +1,7 @@
 #include "controlwidget.hpp"
 #include "slider.h"
 
+#include <QStyle>
 #include <QtWidgets>
 
 QString bytesToString(qint64 bytes)
@@ -29,8 +30,11 @@ public:
         : owner(parent)
     {
         slider = new Slider(owner);
+
+        playButton = new QToolButton(owner);
+        playButton->setIcon(owner->style()->standardIcon(QStyle::SP_MediaPlay));
         positionLabel = new QLabel("00:00:00", owner);
-        durationLabel = new QLabel("/ 00:00:00", owner);
+        durationLabel = new QLabel("00:00:00", owner);
 
         volumeSlider = new Slider(owner);
         volumeSlider->setRange(0, 100);
@@ -54,6 +58,7 @@ public:
     ControlWidget *owner;
 
     Slider *slider;
+    QToolButton *playButton;
     QLabel *positionLabel;
     QLabel *durationLabel;
     QLabel *cacheSpeedLabel;
@@ -73,6 +78,12 @@ ControlWidget::ControlWidget(QWidget *parent)
 }
 
 ControlWidget::~ControlWidget() {}
+
+void ControlWidget::setPause(bool pause)
+{
+    d_ptr->playButton->setIcon(
+        style()->standardIcon(pause ? QStyle::SP_MediaPlay : QStyle::SP_MediaPause));
+}
 
 QPoint ControlWidget::sliderGlobalPos() const
 {
@@ -102,7 +113,7 @@ int ControlWidget::volume() const
 void ControlWidget::onDurationChanged(double value)
 {
     auto str = QTime::fromMSecsSinceStartOfDay(value * 1000).toString("hh:mm:ss");
-    d_ptr->durationLabel->setText("/ " + str);
+    d_ptr->durationLabel->setText(str);
     d_ptr->slider->blockSignals(true);
     d_ptr->slider->setRange(0, value);
     d_ptr->slider->blockSignals(false);
@@ -132,21 +143,22 @@ void ControlWidget::onSpeedChanged()
 
 void ControlWidget::setupUI()
 {
-    auto processWidget = new QWidget(this);
-    //processWidget->setMaximumHeight(70);
-    QHBoxLayout *processLayout = new QHBoxLayout(processWidget);
-    processLayout->addWidget(d_ptr->slider);
-    processLayout->addWidget(d_ptr->positionLabel);
-    processLayout->addWidget(d_ptr->durationLabel);
-
     auto listButton = new QToolButton(this);
     listButton->setText(tr("List"));
     connect(listButton, &QToolButton::clicked, this, &ControlWidget::showList);
 
+    auto volumeBotton = new QToolButton(this);
+    volumeBotton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
+
     auto controlLayout = new QHBoxLayout;
-    controlLayout->addWidget(d_ptr->cacheSpeedLabel);
+    controlLayout->setSpacing(20);
+    controlLayout->addWidget(d_ptr->playButton);
+    controlLayout->addWidget(d_ptr->positionLabel);
+    controlLayout->addWidget(new QLabel("/", this));
+    controlLayout->addWidget(d_ptr->durationLabel);
     controlLayout->addStretch();
-    controlLayout->addWidget(new QLabel(tr("Volume: "), this));
+    controlLayout->addWidget(d_ptr->cacheSpeedLabel);
+    controlLayout->addWidget(volumeBotton);
     controlLayout->addWidget(d_ptr->volumeSlider);
     controlLayout->addWidget(new QLabel(tr("Speed: "), this));
     controlLayout->addWidget(d_ptr->speedCbx);
@@ -154,10 +166,11 @@ void ControlWidget::setupUI()
 
     auto widget = new QWidget(this);
     widget->setObjectName("wid");
-    widget->setStyleSheet("QWidget#wid{background: rgba(255,255,255,0.3);}"
+    widget->setStyleSheet("QWidget#wid{background: rgba(255,255,255,0.3); border-radius:5px;}"
                           "QLabel{ color: white; }");
     auto layout = new QVBoxLayout(widget);
-    layout->addWidget(processWidget);
+    layout->setSpacing(15);
+    layout->addWidget(d_ptr->slider);
     layout->addLayout(controlLayout);
 
     auto l = new QHBoxLayout(this);
@@ -169,6 +182,7 @@ void ControlWidget::buildConnect()
     connect(d_ptr->slider, &Slider::valueChanged, this, &ControlWidget::seek);
     connect(d_ptr->slider, &Slider::onHover, this, &ControlWidget::hoverPosition);
     connect(d_ptr->slider, &Slider::onLeave, this, &ControlWidget::leavePosition);
+    connect(d_ptr->playButton, &QToolButton::clicked, this, &ControlWidget::pause);
     connect(d_ptr->volumeSlider, &QSlider::valueChanged, this, &ControlWidget::volumeChanged);
 
     connect(d_ptr->speedCbx, &QComboBox::currentIndexChanged, this, &ControlWidget::onSpeedChanged);

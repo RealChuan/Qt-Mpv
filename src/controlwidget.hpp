@@ -12,6 +12,7 @@ public:
 
     QPoint sliderGlobalPos() const;
 
+    void setPause(bool pause);
     void setVolumeMax(int max);
     void setVolume(int value);
     int volume() const;
@@ -22,10 +23,11 @@ public slots:
     void onCacheSpeedChanged(int64_t cache_speed);
 
 signals:
-    void volumeChanged(int value);
     void seek(int value);
     void hoverPosition(int pos, int value);
     void leavePosition();
+    void pause();
+    void volumeChanged(int value);
     void speedChanged(double);
     void showList();
 

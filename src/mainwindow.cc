@@ -48,6 +48,7 @@ public:
         logWindow->move(qApp->primaryScreen()->availableGeometry().topLeft());
 
         controlWidget = new ControlWidget(owner);
+        controlWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         titleWidget = new TitleWidget(owner);
 
         playlistModel = new PlaylistModel(owner);
@@ -93,16 +94,21 @@ public:
         new QShortcut(QKeySequence::MoveToNextLine, owner, owner, [this] {
             controlWidget->setVolume(controlWidget->volume() - 10);
         });
-        new QShortcut(Qt::Key_Space, owner, owner, [this] { mpvPlayer->pause(); });
+        new QShortcut(Qt::Key_Space, owner, owner, [this] { pause(); });
     }
 
     void setControlWidgetGeometry(bool show = true)
     {
+        controlWidget->setMinimumWidth(mpvWidget->width() / 2);
+        controlWidget->adjustSize();
+        if (controlWidget->width() * 2 < mpvWidget->width()) {
+            controlWidget->setMinimumWidth(mpvWidget->width() / 2);
+        }
         auto margain = 10;
         auto geometry = mpvWidget->geometry();
-        auto p1 = QPoint(geometry.x() + margain, geometry.bottomLeft().y() - 100 - margain);
-        auto p2 = QPoint(geometry.topRight().x() - margain, geometry.bottomLeft().y() - margain);
-        globalControlWidgetGeometry = {owner->mapToGlobal(p1), owner->mapToGlobal(p2)};
+        auto p1 = QPoint(geometry.x() + (geometry.width() - controlWidget->width()) / 2.0,
+                         geometry.bottomLeft().y() - controlWidget->height() - margain);
+        globalControlWidgetGeometry = {owner->mapToGlobal(p1), controlWidget->size()};
         controlWidget->setFixedSize(globalControlWidgetGeometry.size());
         controlWidget->setGeometry(globalControlWidgetGeometry);
         controlWidget->setVisible(show);
@@ -119,6 +125,8 @@ public:
         titleWidget->setGeometry(globalTitlelWidgetGeometry);
         titleWidget->setVisible(show);
     }
+
+    void pause() { mpvPlayer->pause(); }
 
     MainWindow *owner;
 
@@ -302,6 +310,11 @@ void MainWindow::playlistPositionChanged(int currentItem)
 {
     d_ptr->playlistView->setCurrentIndex(d_ptr->playlistModel->index(currentItem, 0));
     d_ptr->mpvPlayer->openMedia(d_ptr->playlistModel->playlist()->currentMedia().toString());
+    if (d_ptr->mpvPlayer->pausing()) {
+        d_ptr->mpvPlayer->pause();
+    } else {
+        d_ptr->controlWidget->setPause(false);
+    }
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -436,7 +449,7 @@ void MainWindow::setupUI()
 void MainWindow::buildConnect()
 {
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileLoaded, this, &MainWindow::onFileLoaded);
-    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileFinished, [this] {
+    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileFinished, this, [this] {
         d_ptr->playlistModel->playlist()->next();
     });
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::trackChanged, this, &MainWindow::onTrackChanged);
@@ -448,6 +461,9 @@ void MainWindow::buildConnect()
             &Mpv::MpvPlayer::mpvLogMessage,
             d_ptr->logWindow,
             &Mpv::MpvLogWindow::onAppendLog);
+    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::pauseStateChanged, this, [this](bool pause) {
+        d_ptr->controlWidget->setPause(pause);
+    });
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::cacheSpeedChanged,
             d_ptr->controlWidget,
@@ -463,6 +479,7 @@ void MainWindow::buildConnect()
     });
     connect(d_ptr->controlWidget, &ControlWidget::hoverPosition, this, &MainWindow::onPreview);
     connect(d_ptr->controlWidget, &ControlWidget::leavePosition, this, &MainWindow::onPreviewFinish);
+    connect(d_ptr->controlWidget, &ControlWidget::pause, this, [this] { d_ptr->pause(); });
     connect(d_ptr->controlWidget, &ControlWidget::volumeChanged, d_ptr->mpvPlayer, [this](int value) {
         d_ptr->mpvPlayer->setVolume(value);
         d_ptr->titleWidget->setText(tr("Volume: %1%").arg(value));
