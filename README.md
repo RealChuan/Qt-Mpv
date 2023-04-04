@@ -1,5 +1,8 @@
 # Qt-Mpv
 
+- [简体中文](README.md)
+- [English](README.en.md)
+
 ## 编译环境
 
 1. QT6；

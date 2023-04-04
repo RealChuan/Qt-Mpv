@@ -4,22 +4,20 @@ on:
   # push代码时触发workflow
   push:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
-        - 'LICENSE'
+        - 'doc'
+        - 'mac'
+        - '.clang-format'
         - '.gitignore'
-        - 'README.md'
-        - 'README_en.md'
-        - 'resource/**'
-        - 'translations/**'
-        - 'docs/**'
+        - 'LICENSE'
+        - 'README*'
   pull_request:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
-        - 'LICENSE'
+        - 'doc'
+        - 'mac'
+        - '.clang-format'
         - '.gitignore'
-        - 'README.md'
-        - 'README_en.md'
-        - 'resource/**'
-        - 'translations/**'
-        - 'docs/**'
+        - 'LICENSE'
+        - 'README*'
 
 jobs:
   build:
@@ -31,7 +29,7 @@ jobs:
         os:
           - macos-latest
         qt_ver: 
-          - 6.4.2
+          - 6.5.0
 
     steps:
       - name: Install dependencies on macos

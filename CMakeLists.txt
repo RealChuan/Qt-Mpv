@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 IF (CMAKE_HOST_WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.4.2\\msvc2019_64")
+    list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.5.0\\msvc2019_64")
 ENDIF ()
 
 project(Qt-Mpv VERSION 0.1 LANGUAGES CXX)
