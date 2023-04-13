@@ -11,6 +11,8 @@
 
 ## 预览窗口在使用4K视频时，会占用大量内存，因为多开了一个mpv实例，内存double；
 
+**预览窗口使用opengl渲染存在问题，会创建出一个mpv原生播放窗口！！！**
+
 ## MacOS好像只能使用[QOpenglWidget](https://github.com/mpv-player/mpv-examples/tree/master/libmpv/qt_opengl)渲染；
 
 ```

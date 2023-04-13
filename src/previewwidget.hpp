@@ -1,11 +1,11 @@
 #ifndef PREVIEWWIDGET_HPP
 #define PREVIEWWIDGET_HPP
 
-#include "mpvwidget.hpp"
+#include <QWidget>
 
 namespace Mpv {
 
-class PreviewWidget : public MpvWidget
+class PreviewWidget : public QWidget
 {
 public:
     PreviewWidget(QWidget *parent = nullptr);
@@ -15,6 +15,8 @@ public:
     void clearAllTask();
 
 private:
+    void setupUI();
+
     class PreviewWidgetPrivate;
     QScopedPointer<PreviewWidgetPrivate> d_ptr;
 };

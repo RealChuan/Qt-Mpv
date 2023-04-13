@@ -232,31 +232,27 @@ void MainWindow::onTrackChanged()
 {
     auto audioTrackList = d_ptr->mpvPlayer->audioTrackList();
     qDeleteAll(d_ptr->audioTracksGroup->actions());
-    if (audioTrackList.size() > 1) {
-        for (const auto &item : qAsConst(audioTrackList)) {
-            auto action = new QAction(item.text(), this);
-            action->setData(QVariant::fromValue(item));
-            action->setCheckable(true);
-            d_ptr->audioTracksMenu->addAction(action);
-            d_ptr->audioTracksGroup->addAction(action);
-            if (item.selected) {
-                action->setChecked(true);
-            }
+    for (const auto &item : qAsConst(audioTrackList)) {
+        auto action = new QAction(item.text(), this);
+        action->setData(QVariant::fromValue(item));
+        action->setCheckable(true);
+        d_ptr->audioTracksMenu->addAction(action);
+        d_ptr->audioTracksGroup->addAction(action);
+        if (item.selected) {
+            action->setChecked(true);
         }
     }
 
     auto subTrackList = d_ptr->mpvPlayer->subTrackList();
     qDeleteAll(d_ptr->subTracksGroup->actions());
-    if (subTrackList.size() > 1) {
-        for (const auto &item : qAsConst(subTrackList)) {
-            auto action = new QAction(item.text(), this);
-            action->setData(QVariant::fromValue(item));
-            action->setCheckable(true);
-            d_ptr->subTracksMenu->addAction(action);
-            d_ptr->subTracksGroup->addAction(action);
-            if (item.selected) {
-                action->setChecked(true);
-            }
+    for (const auto &item : qAsConst(subTrackList)) {
+        auto action = new QAction(item.text(), this);
+        action->setData(QVariant::fromValue(item));
+        action->setCheckable(true);
+        d_ptr->subTracksMenu->addAction(action);
+        d_ptr->subTracksGroup->addAction(action);
+        if (item.selected) {
+            action->setChecked(true);
         }
     }
 }

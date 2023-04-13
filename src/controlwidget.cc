@@ -11,16 +11,17 @@ QString bytesToString(qint64 bytes)
     const double GB = MB * 1024;
     const double TB = GB * 1024;
 
-    if (bytes / TB >= 1)
+    if (bytes / TB >= 1) {
         return QString("%1TB").arg(QString::number(bytes / TB, 'f', 1));
-    else if (bytes / GB >= 1)
+    } else if (bytes / GB >= 1) {
         return QString("%1GB").arg(QString::number(bytes / GB, 'f', 1));
-    else if (bytes / MB >= 1)
+    } else if (bytes / MB >= 1) {
         return QString("%1MB").arg(QString::number(bytes / MB, 'f', 1));
-    else if (bytes / KB >= 1)
+    } else if (bytes / KB >= 1) {
         return QString("%1KB").arg(qint64(bytes / KB));
-    else
+    } else {
         return QString("%1B").arg(bytes);
+    }
 }
 
 class ControlWidget::ControlWidgetPrivate
