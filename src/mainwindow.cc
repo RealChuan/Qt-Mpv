@@ -272,9 +272,6 @@ void MainWindow::onRenderChanged(QAction *action)
 
 void MainWindow::onPreview(int pos, int value)
 {
-#ifdef Q_OS_MACOS
-    return;
-#endif
     auto url = d_ptr->mpvPlayer->filepath();
     if (url.isEmpty()) {
         return;
