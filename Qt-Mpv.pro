@@ -17,6 +17,10 @@ macx {
     LIBS += -lmpv
 }
 
+unix:!macx{
+    LIBS += -lmpv
+}
+
 contains(QT_ARCH, i386) {
     BIN = bin-32
 }else{

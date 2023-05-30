@@ -61,7 +61,7 @@ public:
 
     void destroy();
 
-    mpv_handle *mpv_handle();
+    mpv_handle *mpv_handler();
 
 signals:
     void fileLoaded();

@@ -28,6 +28,7 @@ jobs:
       matrix:
         os:
           - macos-latest
+          - ubuntu-latest
         qt_ver: 
           - 6.5.0
 
@@ -39,6 +40,15 @@ jobs:
           ninja --version
           cmake --version
           clang --version
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install mpv libmpv-dev
+          ninja --version
+          cmake --version
+          gcc --version
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
@@ -52,8 +62,8 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: build macos
-        if: startsWith(matrix.os, 'macos')
+      - name: build macos or ubuntu
+        if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu')
         run: |
           qmake
           make -j4

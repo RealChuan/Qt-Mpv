@@ -8,6 +8,7 @@
 1. QT6；
 2. Windows：[libmpv](https://sourceforge.net/projects/mpv-player-windows/files/libmpv/)；
 3. MacOS：`brew install mpv`，先升级brew；
+4. Ubuntu：`apt install mpv libmpv-dev`；
 
 ## 预览窗口在使用4K视频时，会占用大量内存，因为多开了一个mpv实例，内存double；
 
@@ -31,6 +32,12 @@ setFormat(surfaceFormat);
 QSurfaceFormat::setDefaultFormat(surfaceFormat);
 ```
 
+## Ubuntu下也好像只能使用[QOpenglWidget](https://github.com/mpv-player/mpv-examples/tree/master/libmpv/qt_opengl)渲染；
+
+```shell
+qt.dbus.integration: Could not connect "org.freedesktop.IBus" to globalEngineChanged(QString)
+```
+
 ## MacOS打包需要[install_name_tool](/mac/change_lib_dependencies.rb)，依赖拷贝脚本文件来自[iina](https://github.com/iina/iina/blob/develop/other/change_lib_dependencies.rb)；
 
 ```shell
@@ -40,3 +47,7 @@ QSurfaceFormat::setDefaultFormat(surfaceFormat);
 依赖会拷贝到 `packet/Qt-Mpv.app/Contents/Frameworks/`；
 
 <div align=center><img src="doc/player.jpeg"></div>
+
+## 问题：
+
+1. Ubuntu下Qt6.5.0中 `mapToGlobal`函数返回值有问题，导致菜单栏和顶栏显示位置不准，[mapToGlobal, wrong values with Linux | Qt Forum](https://forum.qt.io/topic/138486/maptoglobal-wrong-values-with-linux)；

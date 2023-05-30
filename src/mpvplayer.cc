@@ -319,7 +319,7 @@ void MpvPlayer::destroy()
     d_ptr->destroy();
 }
 
-mpv_handle *MpvPlayer::mpv_handle()
+mpv_handle *MpvPlayer::mpv_handler()
 {
     return d_ptr->mpv;
 }

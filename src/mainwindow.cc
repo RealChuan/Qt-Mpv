@@ -34,7 +34,7 @@ public:
 #if defined(Q_OS_WIN)
         mpvWidget = new Mpv::MpvWidget(owner);
         mpvPlayer->initMpv(mpvWidget);
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
         mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, owner);
         mpvPlayer->initMpv(nullptr);
 #endif

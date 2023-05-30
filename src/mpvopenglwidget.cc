@@ -63,8 +63,8 @@ void MpvOpenglWidget::initializeGL()
                                const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
                               {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
                               {MPV_RENDER_PARAM_INVALID, nullptr}};
-
-    if (mpv_render_context_create(&d_ptr->mpv_gl, d_ptr->mpvPlayer->mpv_handle(), params) < 0)
+    
+    if (mpv_render_context_create(&d_ptr->mpv_gl, d_ptr->mpvPlayer->mpv_handler(), params) < 0)
         throw std::runtime_error("failed to initialize mpv GL context");
     mpv_render_context_set_update_callback(d_ptr->mpv_gl,
                                            MpvOpenglWidget::on_update,
