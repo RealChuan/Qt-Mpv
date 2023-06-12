@@ -63,6 +63,10 @@ public:
                     position = 0;
                     emit owner->positionChanged(position);
                 }
+            } else if (strcmp(prop->name, "duration") == 0) {
+                if (prop->format == MPV_FORMAT_DOUBLE) {
+                    emit owner->durationChanged(*(double *) prop->data);
+                }
             } else if (strcmp(prop->name, "chapter-list") == 0) {
                 // Dump the properties as JSON for demo purposes.
                 if (prop->format == MPV_FORMAT_NODE) {
@@ -171,6 +175,17 @@ void MpvPlayer::openMedia(const QString &filePath)
     mpv_command_async(d_ptr->mpv, 0, args);
 }
 
+void MpvPlayer::play()
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "pause", false);
+}
+
+void MpvPlayer::stop()
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "pause", true);
+    mpv::qt::set_property_async(d_ptr->mpv, "time-pos", 0);
+}
+
 QString MpvPlayer::filename() const
 {
     return mpv::qt::get_property(d_ptr->mpv, "filename").toString();
@@ -229,6 +244,13 @@ void MpvPlayer::blockSubTrack()
     mpv::qt::set_property_async(d_ptr->mpv, "sid", "no");
 }
 
+void MpvPlayer::addAudio(const QStringList &paths)
+{
+    for (const auto &path : qAsConst(paths)) {
+        mpv::qt::command_async(d_ptr->mpv, QVariantList() << "audio-add" << path);
+    }
+}
+
 void MpvPlayer::addSub(const QStringList &paths)
 {
     for (const auto &path : qAsConst(paths)) {
@@ -244,6 +266,21 @@ void MpvPlayer::setPrintToStd(bool print)
 void MpvPlayer::setCache(bool cache)
 {
     mpv::qt::set_property_async(d_ptr->mpv, "cahce", cache ? "auto" : "no");
+}
+
+void MpvPlayer::setCacheSeconds(int seconds)
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "cache-secs", seconds);
+}
+
+double MpvPlayer::cacheSpeed() const
+{
+    return mpv::qt::get_property(d_ptr->mpv, "cache-speed").toDouble();
+}
+
+void MpvPlayer::setCacheSpeed(double speed)
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "cache-speed", speed);
 }
 
 void MpvPlayer::setUseGpu(bool use)
@@ -273,6 +310,11 @@ void MpvPlayer::setVolume(int value)
     mpv::qt::set_property_async(d_ptr->mpv, "volume", value);
 }
 
+int MpvPlayer::volume() const
+{
+    return mpv::qt::get_property(d_ptr->mpv, "volume").toInt();
+}
+
 void MpvPlayer::seek(qint64 percent)
 {
     qInfo() << "seek: " << percent;
@@ -289,6 +331,11 @@ void MpvPlayer::setSpeed(double speed)
 {
     qInfo() << "speed: " << speed;
     mpv::qt::set_property_async(d_ptr->mpv, "speed", speed);
+}
+
+double MpvPlayer::speed() const
+{
+    return mpv::qt::get_property(d_ptr->mpv, "speed").toDouble();
 }
 
 void MpvPlayer::pause()

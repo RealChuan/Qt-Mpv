@@ -31,10 +31,7 @@ MpvLogWindow::~MpvLogWindow() {}
 
 void MpvLogWindow::onAppendLog(const QString &log)
 {
-    auto cursor = d_ptr->textEdit->textCursor();
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText(log);
-    d_ptr->textEdit->setTextCursor(cursor);
+    d_ptr->textEdit->append(log);
 }
 
 } // namespace Mpv
