@@ -71,8 +71,9 @@ public:
     void setSpeed(double speed);
     double speed() const;
 
-    void pause();
-    bool pausing();
+    void pauseAsync();
+    void pauseSync(bool state);
+    bool isPaused();
 
     void abortAllAsyncCommands();
 

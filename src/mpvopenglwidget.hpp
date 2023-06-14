@@ -20,9 +20,13 @@ protected:
 
 private Q_SLOTS:
     void maybeUpdate();
+    void onBeforeResize();
+    void onAfterResize();
 
 private:
     static void on_update(void *ctx);
+
+    void buildConnect();
 
     class MpvOpenglWidgetPrivate;
     QScopedPointer<MpvOpenglWidgetPrivate> d_ptr;

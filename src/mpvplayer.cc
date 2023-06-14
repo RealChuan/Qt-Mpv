@@ -338,15 +338,22 @@ double MpvPlayer::speed() const
     return mpv::qt::get_property(d_ptr->mpv, "speed").toDouble();
 }
 
-void MpvPlayer::pause()
+void MpvPlayer::pauseAsync()
 {
-    auto pause_ = !pausing();
-    qInfo() << "pause: " << pause_;
-    mpv::qt::set_property_async(d_ptr->mpv, "pause", pause_);
-    emit pauseStateChanged(pause_);
+    auto state = !isPaused();
+    qInfo() << "pause: " << state;
+    mpv::qt::set_property_async(d_ptr->mpv, "pause", state);
+    emit pauseStateChanged(state);
 }
 
-bool MpvPlayer::pausing()
+void MpvPlayer::pauseSync(bool state)
+{
+    qInfo() << "pause: " << state;
+    mpv::qt::set_property(d_ptr->mpv, "pause", state);
+    emit pauseStateChanged(state);
+}
+
+bool MpvPlayer::isPaused()
 {
     return mpv::qt::get_property(d_ptr->mpv, "pause").toBool();
 }

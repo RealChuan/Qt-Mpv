@@ -23,7 +23,7 @@ public:
 #endif
         mpvPlayer->setUseGpu(true);
         mpvPlayer->setCache(false);
-        mpvPlayer->pause();
+        mpvPlayer->pauseAsync();
     }
 
     PreviewWidget *owner;

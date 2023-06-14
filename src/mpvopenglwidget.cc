@@ -22,7 +22,10 @@ class MpvOpenglWidget::MpvOpenglWidgetPrivate
 public:
     MpvOpenglWidgetPrivate(MpvOpenglWidget *parent)
         : owner(parent)
-    {}
+    {
+        resizeTimer = new QTimer(owner);
+        resizeTimer->setSingleShot(true);
+    }
 
     void clean()
     {
@@ -34,6 +37,10 @@ public:
     MpvOpenglWidget *owner;
     MpvPlayer *mpvPlayer = nullptr;
     mpv_render_context *mpv_gl;
+
+    bool resizePauseState = false;
+    bool isResizing = false;
+    QTimer *resizeTimer;
 };
 
 MpvOpenglWidget::MpvOpenglWidget(MpvPlayer *mpvPlayer, QWidget *parent)
@@ -47,6 +54,8 @@ MpvOpenglWidget::MpvOpenglWidget(MpvPlayer *mpvPlayer, QWidget *parent)
     QSurfaceFormat::setDefaultFormat(surfaceFormat);
 
     d_ptr->mpvPlayer = mpvPlayer;
+
+    buildConnect();
 }
 
 MpvOpenglWidget::~MpvOpenglWidget()
@@ -63,7 +72,7 @@ void MpvOpenglWidget::initializeGL()
                                const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
                               {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
                               {MPV_RENDER_PARAM_INVALID, nullptr}};
-    
+
     if (mpv_render_context_create(&d_ptr->mpv_gl, d_ptr->mpvPlayer->mpv_handler(), params) < 0)
         throw std::runtime_error("failed to initialize mpv GL context");
     mpv_render_context_set_update_callback(d_ptr->mpv_gl,
@@ -107,9 +116,44 @@ void MpvOpenglWidget::maybeUpdate()
     }
 }
 
+void MpvOpenglWidget::onBeforeResize()
+{
+    if (d_ptr->isResizing) { // MacOS 全屏切换时会触发两次 resize
+        return;
+    }
+    d_ptr->resizePauseState = d_ptr->mpvPlayer->isPaused();
+    if (d_ptr->resizePauseState) {
+        return;
+    }
+    d_ptr->mpvPlayer->pauseSync(true);
+    d_ptr->isResizing = true;
+}
+
+void MpvOpenglWidget::onAfterResize()
+{
+    d_ptr->isResizing = false;
+    if (d_ptr->resizePauseState) {
+        return;
+    }
+    d_ptr->mpvPlayer->pauseAsync();
+}
+
 void MpvOpenglWidget::on_update(void *ctx)
 {
     QMetaObject::invokeMethod((MpvOpenglWidget *) ctx, "maybeUpdate");
+}
+
+void MpvOpenglWidget::buildConnect()
+{
+    connect(this, &QOpenGLWidget::aboutToResize, this, &MpvOpenglWidget::onBeforeResize);
+    connect(
+        this,
+        &QOpenGLWidget::resized,
+        d_ptr->resizeTimer,
+        [this] { d_ptr->resizeTimer->start(500); },
+        Qt::QueuedConnection);
+
+    connect(d_ptr->resizeTimer, &QTimer::timeout, this, &MpvOpenglWidget::onAfterResize);
 }
 
 } // namespace Mpv

@@ -126,7 +126,7 @@ public:
         titleWidget->setVisible(show);
     }
 
-    void pause() { mpvPlayer->pause(); }
+    void pause() { mpvPlayer->pauseAsync(); }
 
     MainWindow *owner;
 
@@ -303,8 +303,8 @@ void MainWindow::playlistPositionChanged(int currentItem)
 {
     d_ptr->playlistView->setCurrentIndex(d_ptr->playlistModel->index(currentItem, 0));
     d_ptr->mpvPlayer->openMedia(d_ptr->playlistModel->playlist()->currentMedia().toString());
-    if (d_ptr->mpvPlayer->pausing()) {
-        d_ptr->mpvPlayer->pause();
+    if (d_ptr->mpvPlayer->isPaused()) {
+        d_ptr->mpvPlayer->pauseAsync();
     } else {
         d_ptr->controlWidget->setPause(false);
     }
