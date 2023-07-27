@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 if(CMAKE_HOST_WIN32)
-  list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.5.0\\msvc2019_64")
+  list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.5.2\\msvc2019_64")
 elseif(CMAKE_HOST_APPLE)
 
 elseif(CMAKE_HOST_UNIX)
-  list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/6.5.0/gcc_64")
+  list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/6.5.2/gcc_64")
 endif()
 
 project(

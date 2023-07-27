@@ -12,7 +12,7 @@ class MpvOpenglWidget Q_DECL_FINAL : public QOpenGLWidget
     Q_OBJECT
 public:
     explicit MpvOpenglWidget(Mpv::MpvPlayer *mpvPlayer, QWidget *parent = nullptr);
-    ~MpvOpenglWidget();
+    ~MpvOpenglWidget() override;
 
 protected:
     void initializeGL() Q_DECL_OVERRIDE;

@@ -18,14 +18,14 @@ static void wakeup(void *ctx)
     // recursively from a thread that is calling the mpv API). Just notify
     // the Qt GUI thread to wake up (so that it can process events with
     // mpv_wait_event()), and return as quickly as possible.
-    auto w = (MpvPlayer *) ctx;
+    auto *w = static_cast<MpvPlayer *>(ctx);
     QMetaObject::invokeMethod(w, "onMpvEvents", Qt::QueuedConnection);
 }
 
 class MpvPlayer::MpvPlayerPrivate
 {
 public:
-    MpvPlayerPrivate(MpvPlayer *parent)
+    explicit MpvPlayerPrivate(MpvPlayer *parent)
         : owner(parent)
     {}
 
@@ -35,14 +35,14 @@ public:
     {
         destroy();
         mpv = mpv_create();
-        if (!mpv) {
+        if (mpv == nullptr) {
             throw std::runtime_error("can't create mpv instance");
         }
     }
 
     void destroy()
     {
-        if (mpv) {
+        if (mpv != nullptr) {
             mpv_terminate_destroy(mpv);
             mpv = nullptr;
         }
@@ -52,10 +52,10 @@ public:
     {
         switch (event->event_id) {
         case MPV_EVENT_PROPERTY_CHANGE: {
-            mpv_event_property *prop = (mpv_event_property *) event->data;
+            auto *prop = static_cast<mpv_event_property *>(event->data);
             if (strcmp(prop->name, "time-pos") == 0) {
                 if (prop->format == MPV_FORMAT_DOUBLE) {
-                    position = *(double *) prop->data;
+                    position = *static_cast<double *>(prop->data);
                     emit owner->positionChanged(position);
                 } else if (prop->format == MPV_FORMAT_NONE) {
                     // The property is unavailable, which probably means playback
@@ -65,12 +65,12 @@ public:
                 }
             } else if (strcmp(prop->name, "duration") == 0) {
                 if (prop->format == MPV_FORMAT_DOUBLE) {
-                    emit owner->durationChanged(*(double *) prop->data);
+                    emit owner->durationChanged(*static_cast<double *>(prop->data));
                 }
             } else if (strcmp(prop->name, "chapter-list") == 0) {
                 // Dump the properties as JSON for demo purposes.
                 if (prop->format == MPV_FORMAT_NODE) {
-                    auto v = mpv::qt::node_to_variant((mpv_node *) prop->data);
+                    auto v = mpv::qt::node_to_variant(static_cast<mpv_node *>(prop->data));
                     // Abuse JSON support for easily printing the mpv_node contents.
                     auto d = QJsonDocument::fromVariant(v);
                     emit owner->mpvLogMessage("Change property " + QString(prop->name) + ":\n");
@@ -79,7 +79,7 @@ public:
             } else if (strcmp(prop->name, "track-list") == 0) {
                 // Dump the properties as JSON for demo purposes.
                 if (prop->format == MPV_FORMAT_NODE) {
-                    auto v = mpv::qt::node_to_variant((mpv_node *) prop->data);
+                    auto v = mpv::qt::node_to_variant(static_cast<mpv_node *>(prop->data));
                     // Abuse JSON support for easily printing the mpv_node contents.
                     auto d = QJsonDocument::fromVariant(v);
                     emit owner->mpvLogMessage("Change property " + QString(prop->name) + ":\n");
@@ -101,7 +101,7 @@ public:
                 }
             } else if (strcmp(prop->name, "cache-speed") == 0) {
                 if (prop->format == MPV_FORMAT_INT64) {
-                    cache_speed = *(int64_t *) prop->data;
+                    cache_speed = *static_cast<int64_t *>(prop->data);
                     emit owner->cacheSpeedChanged(cache_speed);
                 }
             }
@@ -124,7 +124,7 @@ public:
             break;
         }
         case MPV_EVENT_LOG_MESSAGE: {
-            struct mpv_event_log_message *msg = (struct mpv_event_log_message *) event->data;
+            auto *msg = static_cast<struct mpv_event_log_message *>(event->data);
             std::stringstream ss;
             ss << "[" << msg->prefix << "] " << msg->level << ": " << msg->text;
             emit owner->mpvLogMessage(QString::fromStdString(ss.str()));
@@ -132,11 +132,11 @@ public:
         }
         case MPV_EVENT_SHUTDOWN:
             mpv_terminate_destroy(mpv);
-            mpv = NULL;
+            mpv = nullptr;
             break;
         case MPV_EVENT_FILE_LOADED: emit owner->fileLoaded(); break;
         case MPV_EVENT_END_FILE: {
-            auto prop = (mpv_event_end_file *) event->data;
+            auto *prop = static_cast<mpv_event_end_file *>(event->data);
             if (prop->reason == MPV_END_FILE_REASON_EOF) {
                 emit owner->fileFinished();
             }
@@ -163,7 +163,7 @@ MpvPlayer::MpvPlayer(QObject *parent)
     qInfo() << mpv_client_api_version();
 }
 
-MpvPlayer::~MpvPlayer() {}
+MpvPlayer::~MpvPlayer() = default;
 
 void MpvPlayer::openMedia(const QString &filePath)
 {
@@ -186,38 +186,38 @@ void MpvPlayer::stop()
     mpv::qt::set_property_async(d_ptr->mpv, "time-pos", 0);
 }
 
-QString MpvPlayer::filename() const
+auto MpvPlayer::filename() const -> QString
 {
     return mpv::qt::get_property(d_ptr->mpv, "filename").toString();
 }
 
-QString MpvPlayer::filepath() const
+auto MpvPlayer::filepath() const -> QString
 {
     return mpv::qt::get_property(d_ptr->mpv, "path").toString();
 }
 
-double MpvPlayer::filesize() const
+auto MpvPlayer::filesize() const -> double
 {
     return mpv::qt::get_property(d_ptr->mpv, "file-size").toDouble();
 }
 
-double MpvPlayer::duration() const
+auto MpvPlayer::duration() const -> double
 {
     return mpv::qt::get_property(d_ptr->mpv, "duration").toDouble();
 }
 
-double MpvPlayer::position() const
+auto MpvPlayer::position() const -> double
 {
     // time-pos
     return mpv::qt::get_property(d_ptr->mpv, "playback-time").toDouble();
 }
 
-TraskInfoList MpvPlayer::audioTrackList() const
+auto MpvPlayer::audioTrackList() const -> TraskInfoList
 {
     return d_ptr->audioTrackList;
 }
 
-TraskInfoList MpvPlayer::subTrackList() const
+auto MpvPlayer::subTrackList() const -> TraskInfoList
 {
     return d_ptr->subTrackList;
 }
@@ -273,7 +273,7 @@ void MpvPlayer::setCacheSeconds(int seconds)
     mpv::qt::set_property_async(d_ptr->mpv, "cache-secs", seconds);
 }
 
-double MpvPlayer::cacheSpeed() const
+auto MpvPlayer::cacheSpeed() const -> double
 {
     return mpv::qt::get_property(d_ptr->mpv, "cache-speed").toDouble();
 }
@@ -310,7 +310,7 @@ void MpvPlayer::setVolume(int value)
     mpv::qt::set_property_async(d_ptr->mpv, "volume", value);
 }
 
-int MpvPlayer::volume() const
+auto MpvPlayer::volume() const -> int
 {
     return mpv::qt::get_property(d_ptr->mpv, "volume").toInt();
 }
@@ -333,7 +333,7 @@ void MpvPlayer::setSpeed(double speed)
     mpv::qt::set_property_async(d_ptr->mpv, "speed", speed);
 }
 
-double MpvPlayer::speed() const
+auto MpvPlayer::speed() const -> double
 {
     return mpv::qt::get_property(d_ptr->mpv, "speed").toDouble();
 }
@@ -353,12 +353,12 @@ void MpvPlayer::pauseSync(bool state)
     emit pauseStateChanged(state);
 }
 
-bool MpvPlayer::isPaused()
+auto MpvPlayer::isPaused() -> bool
 {
     return mpv::qt::get_property(d_ptr->mpv, "pause").toBool();
 }
 
-int MpvPlayer::volumeMax() const
+auto MpvPlayer::volumeMax() const -> int
 {
     return mpv::qt::get_property(d_ptr->mpv, "volume-max").toInt();
 }
@@ -373,7 +373,7 @@ void MpvPlayer::destroy()
     d_ptr->destroy();
 }
 
-mpv_handle *MpvPlayer::mpv_handler()
+auto MpvPlayer::mpv_handler() -> mpv_handle *
 {
     return d_ptr->mpv;
 }
@@ -393,7 +393,7 @@ void MpvPlayer::onMpvEvents()
 void MpvPlayer::initMpv(QWidget *widget)
 {
     d_ptr->init();
-    if (widget) {
+    if (widget != nullptr) {
         auto raw_wid = widget->winId();
 #ifdef _WIN32
         // Truncate to 32-bit, as all Windows handles are. This also ensures

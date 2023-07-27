@@ -12,6 +12,6 @@ MpvWidget::MpvWidget(QWidget *parent)
     setStyleSheet("QWidget{background:black;}");
 }
 
-MpvWidget::~MpvWidget() {}
+MpvWidget::~MpvWidget() = default;
 
 } // namespace Mpv

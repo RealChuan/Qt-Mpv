@@ -33,15 +33,15 @@ public:
     void play();
     void stop();
 
-    QString filename() const;
-    QString filepath() const;
-    double filesize() const;
+    [[nodiscard]] auto filename() const -> QString;
+    [[nodiscard]] auto filepath() const -> QString;
+    [[nodiscard]] auto filesize() const -> double;
 
-    double duration() const; // s
-    double position() const; // s
+    [[nodiscard]] auto duration() const -> double; // s
+    [[nodiscard]] auto position() const -> double; // s
 
-    TraskInfoList audioTrackList() const;
-    TraskInfoList subTrackList() const;
+    [[nodiscard]] auto audioTrackList() const -> TraskInfoList;
+    [[nodiscard]] auto subTrackList() const -> TraskInfoList;
 
     void setAudioTrack(int aid);
     void blockAudioTrack();
@@ -55,31 +55,31 @@ public:
 
     void setCache(bool cache);
     void setCacheSeconds(int seconds);
-    double cacheSpeed() const;        // s
-    void setCacheSpeed(double speed); // bytes / s
+    [[nodiscard]] auto cacheSpeed() const -> double; // s
+    void setCacheSpeed(double speed);                // bytes / s
 
     void setUseGpu(bool use);
     void setGpuApi(GpuApiType type);
 
     void setVolume(int value);
-    int volume() const;
-    int volumeMax() const;
+    [[nodiscard]] auto volume() const -> int;
+    [[nodiscard]] auto volumeMax() const -> int;
 
     void seek(qint64 seconds);
     void seekRelative(qint64 seconds);
 
     void setSpeed(double speed);
-    double speed() const;
+    [[nodiscard]] auto speed() const -> double;
 
     void pauseAsync();
     void pauseSync(bool state);
-    bool isPaused();
+    auto isPaused() -> bool;
 
     void abortAllAsyncCommands();
 
     void destroy();
 
-    mpv_handle *mpv_handler();
+    auto mpv_handler() -> mpv_handle *;
 
 signals:
     void fileLoaded();

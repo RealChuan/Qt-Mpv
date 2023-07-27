@@ -7,10 +7,10 @@ namespace Mpv {
 
 struct TraskInfo
 {
-    TraskInfo() {}
-    TraskInfo(const QJsonObject &obj);
+    TraskInfo() = default;
+    explicit TraskInfo(const QJsonObject &obj);
 
-    QString text() const;
+    [[nodiscard]] auto text() const -> QString;
 
     bool albumart = false;
     QString codec;

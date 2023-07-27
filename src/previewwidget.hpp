@@ -8,8 +8,8 @@ namespace Mpv {
 class PreviewWidget : public QWidget
 {
 public:
-    PreviewWidget(QWidget *parent = nullptr);
-    ~PreviewWidget();
+    explicit PreviewWidget(QWidget *parent = nullptr);
+    ~PreviewWidget() override;
 
     void startPreview(const QString &filepath, int timestamp);
     void clearAllTask();

@@ -14,10 +14,10 @@ public:
         : owner(parent)
     {
         mpvPlayer = new Mpv::MpvPlayer(owner);
-#if defined(Q_OS_WIN)
+#ifdef Q_OS_WIN
         mpvWidget = new Mpv::MpvWidget(owner);
         mpvPlayer->initMpv(mpvWidget);
-#elif defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+#else
         mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, owner);
         mpvPlayer->initMpv(nullptr);
 #endif

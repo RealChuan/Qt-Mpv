@@ -22,7 +22,7 @@ TraskInfo::TraskInfo(const QJsonObject &obj)
     visual_impaired = obj.value("visual-impaired").toBool();
 }
 
-QString TraskInfo::text() const
+auto TraskInfo::text() const -> QString
 {
     QString str = title;
     if (str.isEmpty()) {

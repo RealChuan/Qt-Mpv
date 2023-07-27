@@ -8,12 +8,13 @@
 
 namespace Mpv {
 
-static void *get_proc_address(void *ctx, const char *name)
+static auto get_proc_address(void *ctx, const char *name) -> void *
 {
     Q_UNUSED(ctx);
-    QOpenGLContext *glctx = QOpenGLContext::currentContext();
-    if (!glctx)
+    auto *glctx = QOpenGLContext::currentContext();
+    if (glctx == nullptr) {
         return nullptr;
+    }
     return reinterpret_cast<void *>(glctx->getProcAddress(QByteArray(name)));
 }
 

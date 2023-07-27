@@ -10,7 +10,7 @@ class MpvWidget : public QWidget
     Q_OBJECT
 public:
     explicit MpvWidget(QWidget *parent = nullptr);
-    ~MpvWidget();
+    ~MpvWidget() override;
 };
 
 } // namespace Mpv

@@ -7,8 +7,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 private slots:
     void onOpenLocalMedia();
@@ -25,7 +25,7 @@ private slots:
     void jump(const QModelIndex &index);
 
 protected:
-    bool eventFilter(QObject *watched, QEvent *event) override;
+    auto eventFilter(QObject *watched, QEvent *event) -> bool override;
     void keyPressEvent(QKeyEvent *ev) override;
 
 private:

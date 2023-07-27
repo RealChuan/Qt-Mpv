@@ -14,7 +14,7 @@
 
 #include <QtWidgets>
 
-static bool isPlaylist(const QUrl &url) // Check for ".m3u" playlists.
+static auto isPlaylist(const QUrl &url) -> bool // Check for ".m3u" playlists.
 {
     if (!url.isLocalFile()) {
         return false;
@@ -31,10 +31,10 @@ public:
         : owner(parent)
     {
         mpvPlayer = new Mpv::MpvPlayer(owner);
-#if defined(Q_OS_WIN)
+#ifdef Q_OS_WIN
         mpvWidget = new Mpv::MpvWidget(owner);
         mpvPlayer->initMpv(mpvWidget);
-#elif defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+#else
         mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, owner);
         mpvPlayer->initMpv(nullptr);
 #endif
@@ -56,7 +56,6 @@ public:
         playlistView->setModel(playlistModel);
         playlistView->setCurrentIndex(
             playlistModel->index(playlistModel->playlist()->currentIndex(), 0));
-        playlistModel->playlist()->setPlaybackMode(QMediaPlaylist::PlaybackMode::Loop);
         //playlistView->setMaximumWidth(250);
 
         menu = new QMenu(owner);
@@ -99,6 +98,7 @@ public:
 
     void setControlWidgetGeometry(bool show = true)
     {
+        controlWidget->setFixedSize({QWIDGETSIZE_MAX, QWIDGETSIZE_MAX});
         controlWidget->setMinimumWidth(mpvWidget->width() / 2);
         controlWidget->adjustSize();
         if (controlWidget->width() * 2 < mpvWidget->width()) {
@@ -167,7 +167,7 @@ MainWindow::MainWindow(QWidget *parent)
     d_ptr->playlistView->installEventFilter(this);
     installEventFilter(this);
 
-    resize(1000, 650);
+    resize(1000, 618);
 }
 
 MainWindow::~MainWindow()
@@ -301,6 +301,9 @@ void MainWindow::onPreviewFinish()
 
 void MainWindow::playlistPositionChanged(int currentItem)
 {
+    if (currentItem < 0) {
+        return;
+    }
     d_ptr->playlistView->setCurrentIndex(d_ptr->playlistModel->index(currentItem, 0));
     d_ptr->mpvPlayer->openMedia(d_ptr->playlistModel->playlist()->currentMedia().toString());
     if (d_ptr->mpvPlayer->isPaused()) {
@@ -442,9 +445,10 @@ void MainWindow::setupUI()
 void MainWindow::buildConnect()
 {
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileLoaded, this, &MainWindow::onFileLoaded);
-    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::fileFinished, this, [this] {
-        d_ptr->playlistModel->playlist()->next();
-    });
+    connect(d_ptr->mpvPlayer,
+            &Mpv::MpvPlayer::fileFinished,
+            d_ptr->playlistModel->playlist(),
+            &QMediaPlaylist::next);
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::trackChanged, this, &MainWindow::onTrackChanged);
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::positionChanged,
@@ -462,6 +466,14 @@ void MainWindow::buildConnect()
             d_ptr->controlWidget,
             &ControlWidget::onCacheSpeedChanged);
 
+    connect(d_ptr->controlWidget,
+            &ControlWidget::previous,
+            d_ptr->playlistModel->playlist(),
+            &QMediaPlaylist::previous);
+    connect(d_ptr->controlWidget,
+            &ControlWidget::next,
+            d_ptr->playlistModel->playlist(),
+            &QMediaPlaylist::next);
     connect(d_ptr->controlWidget, &ControlWidget::seek, d_ptr->mpvPlayer, [this](int value) {
         d_ptr->mpvPlayer->seek(value);
         d_ptr->titleWidget->setText(
@@ -490,6 +502,13 @@ void MainWindow::buildConnect()
                 d_ptr->titleWidget->setText(tr("Speed: %1").arg(value));
                 d_ptr->titleWidget->setAutoHide(3000);
                 d_ptr->setTitleWidgetGeometry(true);
+            });
+    connect(d_ptr->controlWidget,
+            &ControlWidget::modelChanged,
+            d_ptr->playlistModel->playlist(),
+            [this](int model) {
+                d_ptr->playlistModel->playlist()->setPlaybackMode(
+                    QMediaPlaylist::PlaybackMode(model));
             });
     connect(d_ptr->controlWidget, &ControlWidget::showList, d_ptr->playlistView, [this] {
         d_ptr->playlistView->setVisible(!d_ptr->playlistView->isVisible());

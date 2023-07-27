@@ -10,7 +10,7 @@ class MpvLogWindow : public QMainWindow
     Q_OBJECT
 public:
     explicit MpvLogWindow(QWidget *parent = nullptr);
-    ~MpvLogWindow();
+    ~MpvLogWindow() override;
 
 public slots:
     void onAppendLog(const QString &log);

@@ -8,9 +8,9 @@ PlayListView::PlayListView(QWidget *parent)
     setSelectionMode(QAbstractItemView::ExtendedSelection);
 }
 
-PlayListView::~PlayListView() {}
+PlayListView::~PlayListView() = default;
 
-QModelIndexList PlayListView::selectedAllIndexs() const
+auto PlayListView::selectedAllIndexs() const -> QModelIndexList
 {
     return selectedIndexes();
 }
