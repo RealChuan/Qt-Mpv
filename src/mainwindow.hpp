@@ -29,7 +29,6 @@ protected:
     void keyPressEvent(QKeyEvent *ev) override;
 
 private:
-    void setupUI();
     void buildConnect();
     void initMenu();
     void initPlayListMenu();

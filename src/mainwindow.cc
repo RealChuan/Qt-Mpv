@@ -27,77 +27,101 @@ static auto isPlaylist(const QUrl &url) -> bool // Check for ".m3u" playlists.
 class MainWindow::MainWindowPrivate
 {
 public:
-    MainWindowPrivate(MainWindow *parent)
-        : owner(parent)
+    MainWindowPrivate(MainWindow *q)
+        : q_ptr(q)
     {
-        mpvPlayer = new Mpv::MpvPlayer(owner);
+        mpvPlayer = new Mpv::MpvPlayer(q_ptr);
 #ifdef Q_OS_WIN
-        mpvWidget = new Mpv::MpvWidget(owner);
+        mpvWidget = new Mpv::MpvWidget(q_ptr);
         mpvPlayer->initMpv(mpvWidget);
 #else
-        mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, owner);
+        mpvWidget = new Mpv::MpvOpenglWidget(mpvPlayer, q_ptr);
         mpvPlayer->initMpv(nullptr);
 #endif
         mpvWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         mpvWidget->setAcceptDrops(true);
         mpvPlayer->setPrintToStd(true);
 
-        logWindow = new Mpv::MpvLogWindow(owner);
+        logWindow = new Mpv::MpvLogWindow(q_ptr);
         logWindow->setMinimumSize(500, 325);
         logWindow->show();
         logWindow->move(qApp->primaryScreen()->availableGeometry().topLeft());
 
-        controlWidget = new ControlWidget(owner);
+        controlWidget = new ControlWidget(q_ptr);
         controlWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        titleWidget = new TitleWidget(owner);
+        titleWidget = new TitleWidget(q_ptr);
+        titleWidget->setMinimumHeight(80);
 
-        playlistModel = new PlaylistModel(owner);
-        playlistView = new PlayListView(owner);
+        playlistModel = new PlaylistModel(q_ptr);
+        playlistView = new PlayListView(q_ptr);
         playlistView->setModel(playlistModel);
         playlistView->setCurrentIndex(
             playlistModel->index(playlistModel->playlist()->currentIndex(), 0));
         //playlistView->setMaximumWidth(250);
 
-        menu = new QMenu(owner);
-        gpuAction = new QAction(QObject::tr("H/W"), owner);
+        menu = new QMenu(q_ptr);
+        gpuAction = new QAction(QObject::tr("H/W"), q_ptr);
         gpuAction->setCheckable(true);
-        audioTracksMenu = new QMenu(QObject::tr("Select audio track"), owner);
-        subTracksMenu = new QMenu(QObject::tr("Select subtitle track"), owner);
-        audioTracksGroup = new QActionGroup(owner);
+        audioTracksMenu = new QMenu(QObject::tr("Select audio track"), q_ptr);
+        subTracksMenu = new QMenu(QObject::tr("Select subtitle track"), q_ptr);
+        audioTracksGroup = new QActionGroup(q_ptr);
         audioTracksGroup->setExclusive(true);
-        subTracksGroup = new QActionGroup(owner);
+        subTracksGroup = new QActionGroup(q_ptr);
         subTracksGroup->setExclusive(true);
 
-        playListMenu = new QMenu(owner);
+        playListMenu = new QMenu(q_ptr);
 
         initShortcut();
     }
 
     void initShortcut()
     {
-        new QShortcut(QKeySequence::MoveToNextChar, owner, owner, [this] {
+        new QShortcut(QKeySequence::MoveToNextChar, q_ptr, q_ptr, [this] {
             mpvPlayer->seekRelative(5);
             titleWidget->setText(tr("Fast forward: 5 seconds"));
             titleWidget->setAutoHide(3000);
             setTitleWidgetGeometry(true);
         });
-        new QShortcut(QKeySequence::MoveToPreviousChar, owner, owner, [this] {
+        new QShortcut(QKeySequence::MoveToPreviousChar, q_ptr, q_ptr, [this] {
             mpvPlayer->seekRelative(-5);
             titleWidget->setText(tr("Fast return: 5 seconds"));
             titleWidget->setAutoHide(3000);
             setTitleWidgetGeometry(true);
         });
-        new QShortcut(QKeySequence::MoveToPreviousLine, owner, owner, [this] {
+        new QShortcut(QKeySequence::MoveToPreviousLine, q_ptr, q_ptr, [this] {
             controlWidget->setVolume(controlWidget->volume() + 10);
         });
-        new QShortcut(QKeySequence::MoveToNextLine, owner, owner, [this] {
+        new QShortcut(QKeySequence::MoveToNextLine, q_ptr, q_ptr, [this] {
             controlWidget->setVolume(controlWidget->volume() - 10);
         });
-        new QShortcut(Qt::Key_Space, owner, owner, [this] { pause(); });
+        new QShortcut(Qt::Key_Space, q_ptr, q_ptr, [this] { pause(); });
+    }
+
+    void setupUI()
+    {
+#ifndef Q_OS_WIN
+        auto controlLayout = new QHBoxLayout;
+        controlLayout->addStretch();
+        controlLayout->addWidget(controlWidget);
+        controlLayout->addStretch();
+        auto layout = new QVBoxLayout(mpvWidget);
+        layout->addWidget(titleWidget);
+        layout->addStretch();
+        layout->addLayout(controlLayout);
+#endif
+
+        auto splitter = new QSplitter(q_ptr);
+        splitter->setHandleWidth(0);
+        splitter->addWidget(mpvWidget);
+        splitter->addWidget(playlistView);
+        splitter->setSizes({200, 1});
+
+        q_ptr->setCentralWidget(splitter);
     }
 
     void setControlWidgetGeometry(bool show = true)
     {
+#ifdef Q_OS_WIN
         controlWidget->setFixedSize({QWIDGETSIZE_MAX, QWIDGETSIZE_MAX});
         controlWidget->setMinimumWidth(mpvWidget->width() / 2);
         controlWidget->adjustSize();
@@ -108,27 +132,34 @@ public:
         auto geometry = mpvWidget->geometry();
         auto p1 = QPoint(geometry.x() + (geometry.width() - controlWidget->width()) / 2.0,
                          geometry.bottomLeft().y() - controlWidget->height() - margain);
-        globalControlWidgetGeometry = {owner->mapToGlobal(p1), controlWidget->size()};
+        globalControlWidgetGeometry = {q_ptr->mapToGlobal(p1), controlWidget->size()};
         controlWidget->setFixedSize(globalControlWidgetGeometry.size());
         controlWidget->setGeometry(globalControlWidgetGeometry);
         controlWidget->setVisible(show);
+#else
+        controlWidget->setVisible(show);
+#endif
     }
 
     void setTitleWidgetGeometry(bool show = true)
     {
+#ifdef Q_OS_WIN
         auto margain = 10;
         auto geometry = mpvWidget->geometry();
         auto p1 = QPoint(geometry.x() + margain, geometry.y() + margain);
         auto p2 = QPoint(geometry.topRight().x() - margain, geometry.y() + margain + 80);
-        globalTitlelWidgetGeometry = {owner->mapToGlobal(p1), owner->mapToGlobal(p2)};
+        globalTitlelWidgetGeometry = {q_ptr->mapToGlobal(p1), q_ptr->mapToGlobal(p2)};
         titleWidget->setFixedSize(globalTitlelWidgetGeometry.size());
         titleWidget->setGeometry(globalTitlelWidgetGeometry);
         titleWidget->setVisible(show);
+#else
+        titleWidget->setVisible(show);
+#endif
     }
 
     void pause() { mpvPlayer->pauseAsync(); }
 
-    MainWindow *owner;
+    MainWindow *q_ptr;
 
     Mpv::MpvPlayer *mpvPlayer;
     QWidget *mpvWidget;
@@ -136,9 +167,11 @@ public:
     Mpv::MpvLogWindow *logWindow;
 
     ControlWidget *controlWidget;
-    QRect globalControlWidgetGeometry;
     TitleWidget *titleWidget;
+#ifdef Q_OS_WIN
     QRect globalTitlelWidgetGeometry;
+    QRect globalControlWidgetGeometry;
+#endif
 
     PlayListView *playlistView;
     PlaylistModel *playlistModel;
@@ -157,7 +190,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , d_ptr(new MainWindowPrivate(this))
 {
-    setupUI();
+    d_ptr->setupUI();
     buildConnect();
     initMenu();
     initPlayListMenu();
@@ -336,6 +369,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
             auto e = static_cast<QContextMenuEvent *>(event);
             d_ptr->menu->exec(e->globalPos());
         } break;
+#ifdef Q_OS_WIN
         case QEvent::Resize:
             QMetaObject::invokeMethod(
                 this,
@@ -345,6 +379,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 },
                 Qt::QueuedConnection);
             break;
+#endif
             //        case QEvent::MouseButtonPress: {
             //            auto e = static_cast<QMouseEvent *>(event);
             //            if (e->button() & Qt::LeftButton) {
@@ -371,6 +406,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         }
     } else if (watched == this) {
         switch (event->type()) {
+#ifdef Q_OS_WIN
         case QEvent::Show:
         case QEvent::Move:
             QMetaObject::invokeMethod(
@@ -407,6 +443,24 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 }
             }
             break;
+#else
+        case QEvent::HoverMove: {
+            d_ptr->controlWidget->show();
+            d_ptr->controlWidget->hide();
+            auto controlWidgetGeometry = d_ptr->controlWidget->geometry();
+            auto e = static_cast<QHoverEvent *>(event);
+            bool contain = controlWidgetGeometry.contains(e->position().toPoint());
+            d_ptr->setControlWidgetGeometry(contain);
+            if (isFullScreen()) {
+                d_ptr->titleWidget->show();
+                d_ptr->titleWidget->hide();
+                auto titleWidgetGeometry = d_ptr->titleWidget->geometry();
+                contain = titleWidgetGeometry.contains(e->position().toPoint());
+                d_ptr->setTitleWidgetGeometry(contain);
+            }
+            break;
+        }
+#endif
         default: break;
         }
     }
@@ -429,17 +483,6 @@ void MainWindow::keyPressEvent(QKeyEvent *ev)
     case Qt::Key_Q: qApp->quit(); break;
     default: break;
     }
-}
-
-void MainWindow::setupUI()
-{
-    auto splitter = new QSplitter(this);
-    splitter->setHandleWidth(0);
-    splitter->addWidget(d_ptr->mpvWidget);
-    splitter->addWidget(d_ptr->playlistView);
-    splitter->setSizes({200, 1});
-
-    setCentralWidget(splitter);
 }
 
 void MainWindow::buildConnect()

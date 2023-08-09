@@ -4,16 +4,16 @@ on:
   # push代码时触发workflow
   push:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
-        - 'doc'
-        - 'mac'
+        - 'doc/**'
+        - 'mac/**'
         - '.clang-format'
         - '.gitignore'
         - 'LICENSE'
         - 'README*'
   pull_request:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
-        - 'doc'
-        - 'mac'
+        - 'doc/**'
+        - 'mac/**'
         - '.clang-format'
         - '.gitignore'
         - 'LICENSE'
@@ -35,6 +35,7 @@ jobs:
     steps:
       - name: Install dependencies on macos
         if: startsWith(matrix.os, 'macos')
+        shell: bash
         run: |
           brew install ninja mpv
           ninja --version
@@ -43,6 +44,7 @@ jobs:
 
       - name: Install dependencies on ubuntu
         if: startsWith(matrix.os, 'ubuntu')
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install mpv libmpv-dev ninja-build
@@ -64,6 +66,7 @@ jobs:
 
       - name: build macos or ubuntu
         if: startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'ubuntu')
+        shell: bash
         run: |
           qmake
           make -j4
