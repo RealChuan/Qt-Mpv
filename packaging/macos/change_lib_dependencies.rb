@@ -11,6 +11,17 @@ def safe_system(*args)
   system(*args) || abort("Fail to run the last command!")
 end
 
+# 定义一个类 Dep，它有两个属性 dest 和 src
+class Dependent
+  attr_accessor :dest, :src
+
+  # 定义一个初始化方法，接受两个参数
+  def initialize(dest, src)
+    @dest = dest
+    @src = src
+  end
+end
+
 class DylibFile
   OTOOL_RX = /\t(.*) \(compatibility version (?:\d+\.)*\d+, current version (?:\d+\.)*\d+\)/
 
@@ -71,12 +82,12 @@ prefix = ARGV.shift
 linked_files = ARGV
 
 proj_path = File.expand_path(File.join(File.dirname(__FILE__), '../'))
-lib_folder = File.join(proj_path, "packet/Qt-Mpv.app/Contents/Frameworks/")
+lib_folder = File.join(proj_path, "macos/lib/")
 
-libs = []
+deps = []
 
-#rm_rf lib_folder
-#mkdir lib_folder
+rm_rf lib_folder
+mkdir lib_folder
 
 linked_files.each do |file|
   # Grab the actual library on disk.
@@ -89,26 +100,40 @@ linked_files.each do |file|
 
   puts "cp -p #{file} #{dest}"
   copy_entry file, dest, preserve: true
-  libs << dest
+  deps << Dependent.new(dest, file)
 end
 
 fix_count = 0
 
-while !libs.empty?
-  file = libs.pop
+while !deps.empty?
+  dependent = deps.pop
+  file = dependent.dest
+  loader_path = File.dirname(dependent.src)
+  puts "loader_path: #{loader_path}"
   puts "=== Fix dependencies for #{file} ==="
   dylib = DylibFile.new file
   dylib.change_id!
   dylib.deps.each do |dep|
+    old_dep = dep
+    if dep.start_with?("@loader_path")
+      dep = dep.gsub("@loader_path", loader_path)
+    end
+    # 如果是软连接，需要获取真实路径
+    if File.symlink?(dep)
+      dep = File.realpath(dep)
+    end
+    # puts "dep: #{dep}"
+
     if dep.start_with?(prefix)
       fix_count += 1
       basename = File.basename(dep)
       new_name = "@rpath/#{basename}"
-      dylib.change_install_name!(dep, new_name)
+      dylib.change_install_name!(old_dep, new_name)
       dest = File.join(lib_folder, basename)
-      unless File.exists?(dest)
-        cp dep, lib_folder, preserve: true
-        libs << dest
+      # 检查是否已经存在
+      unless File.exist?(dest)
+        copy_entry dep, dest, preserve: true
+        deps << Dependent.new(dest, dep)
       end
     end
   end

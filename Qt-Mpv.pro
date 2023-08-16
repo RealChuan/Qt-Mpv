@@ -38,4 +38,5 @@ DESTDIR = $$APP_OUTPUT_PATH
 include(src/src.pri)
 
 DISTFILES += \
-    README.md
+    LICENSE \
+    README*

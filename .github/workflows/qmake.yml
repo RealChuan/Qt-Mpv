@@ -5,7 +5,7 @@ on:
   push:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
         - 'doc/**'
-        - 'mac/**'
+        - 'packaging/**'
         - '.clang-format'
         - '.gitignore'
         - 'LICENSE'
@@ -13,7 +13,7 @@ on:
   pull_request:
     paths-ignore: # 下列文件的变更不触发部署，可以自行添加
         - 'doc/**'
-        - 'mac/**'
+        - 'packaging/**'
         - '.clang-format'
         - '.gitignore'
         - 'LICENSE'
