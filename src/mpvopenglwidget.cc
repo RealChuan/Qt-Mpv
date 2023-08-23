@@ -48,12 +48,6 @@ MpvOpenglWidget::MpvOpenglWidget(MpvPlayer *mpvPlayer, QWidget *parent)
     : QOpenGLWidget{parent}
     , d_ptr(new MpvOpenglWidgetPrivate(this))
 {
-    QSurfaceFormat surfaceFormat;
-    surfaceFormat.setVersion(3, 3);
-    surfaceFormat.setProfile(QSurfaceFormat::CoreProfile);
-    setFormat(surfaceFormat);
-    QSurfaceFormat::setDefaultFormat(surfaceFormat);
-
     d_ptr->mpvPlayer = mpvPlayer;
 
     buildConnect();

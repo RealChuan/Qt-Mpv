@@ -12,8 +12,6 @@
 
 ## 预览窗口在使用4K视频时，会占用大量内存，因为多开了一个mpv实例，内存double；
 
-**预览窗口使用opengl渲染存在问题，会创建出一个mpv原生播放窗口！！！**
-
 ## MacOS好像只能使用[QOpenglWidget](https://github.com/mpv-player/mpv-examples/tree/master/libmpv/qt_opengl)渲染；
 
 ```
@@ -28,9 +26,10 @@
 QSurfaceFormat surfaceFormat;
 surfaceFormat.setVersion(3, 3);
 surfaceFormat.setProfile(QSurfaceFormat::CoreProfile);
-setFormat(surfaceFormat);
 QSurfaceFormat::setDefaultFormat(surfaceFormat);
 ```
+
+> **Note:** When setting Qt::AA_ShareOpenGLContexts, it is strongly recommended to place the call to this function before the construction of the QGuiApplication or QApplication. Otherwise format will not be applied to the global share context and therefore issues may arise with context sharing afterwards.
 
 ## Ubuntu下也好像只能使用[QOpenglWidget](https://github.com/mpv-player/mpv-examples/tree/master/libmpv/qt_opengl)渲染；
 
@@ -54,7 +53,3 @@ qt.dbus.integration: Could not connect "org.freedesktop.IBus" to globalEngineCha
 依赖会拷贝到 `packet/Qt-Mpv.app/Contents/Frameworks/`；
 
 <div align=center><img src="doc/player.jpeg"></div>
-
-## 问题：
-
-1. Ubuntu下Qt6.5.0中 `mapToGlobal`函数返回值有问题，导致菜单栏和顶栏显示位置不准，[mapToGlobal, wrong values with Linux | Qt Forum](https://forum.qt.io/topic/138486/maptoglobal-wrong-values-with-linux)；
