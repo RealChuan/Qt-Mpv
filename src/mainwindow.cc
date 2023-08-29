@@ -212,15 +212,16 @@ void MainWindow::onOpenLocalMedia()
 {
     const auto path = QStandardPaths::standardLocations(QStandardPaths::MoviesLocation)
                           .value(0, QDir::homePath());
-    const auto filePaths
-        = QFileDialog::getOpenFileUrls(this,
-                                       tr("Open File"),
-                                       path,
-                                       tr("Audio Video (*.mp3 *.mp4 *.mkv *.rmvb)"));
-    if (filePaths.isEmpty()) {
+    const auto filter = tr("Media (*.mp4 *.flv *.ts *.avi *.rmvb *.mkv *.wmv *.mp3 *.wav *.flac "
+                           "*.ape *.m4a *.aac *.ogg *.ac3 *.mpg)");
+    const auto urls = QFileDialog::getOpenFileUrls(this,
+                                                   tr("Open Media"),
+                                                   QUrl::fromUserInput(path),
+                                                   filter);
+    if (urls.isEmpty()) {
         return;
     }
-    addToPlaylist(filePaths);
+    addToPlaylist(urls);
 }
 
 void MainWindow::onOpenWebMedia()
