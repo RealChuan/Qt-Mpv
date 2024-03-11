@@ -90,16 +90,16 @@ private:
         dst->format = is_map ? MPV_FORMAT_NODE_MAP : MPV_FORMAT_NODE_ARRAY;
         auto *list = new mpv_node_list();
         dst->u.list = list;
-        if (!list) {
+        if (list == nullptr) {
             goto err;
         }
         list->values = new mpv_node[num]();
-        if (!list->values) {
+        if (list->values == nullptr) {
             goto err;
         }
         if (is_map) {
             list->keys = new char *[num]();
-            if (!list->keys) {
+            if (list->keys == nullptr) {
                 goto err;
             }
         }
@@ -112,7 +112,7 @@ private:
     {
         QByteArray b = s.toUtf8();
         char *r = new char[b.size() + 1];
-        if (r)
+        if (r != nullptr)
             std::memcpy(r, b.data(), b.size() + 1);
         return r;
     }
@@ -129,7 +129,7 @@ private:
         if (test_type(src, QMetaType::QString)) {
             dst->format = MPV_FORMAT_STRING;
             dst->u.string = dup_qstring(src.toString());
-            if (!dst->u.string) {
+            if (dst->u.string == nullptr) {
                 goto fail;
             }
         } else if (test_type(src, QMetaType::Bool)) {
@@ -145,7 +145,7 @@ private:
         } else if (src.canConvert<QVariantList>()) {
             QVariantList qlist = src.toList();
             mpv_node_list *list = create_list(dst, false, qlist.size());
-            if (!list) {
+            if (list == nullptr) {
                 goto fail;
             }
             list->num = qlist.size();
@@ -155,13 +155,13 @@ private:
         } else if (src.canConvert<QVariantMap>()) {
             QVariantMap qmap = src.toMap();
             mpv_node_list *list = create_list(dst, true, qmap.size());
-            if (!list) {
+            if (list == nullptr) {
                 goto fail;
             }
             list->num = qmap.size();
             for (int n = 0; n < qmap.size(); n++) {
                 list->keys[n] = dup_qstring(qmap.keys()[n]);
-                if (!list->keys[n]) {
+                if (list->keys[n] == nullptr) {
                     free_node(dst);
                     goto fail;
                 }
@@ -181,12 +181,12 @@ private:
         case MPV_FORMAT_NODE_ARRAY:
         case MPV_FORMAT_NODE_MAP: {
             mpv_node_list *list = dst->u.list;
-            if (list) {
+            if (list != nullptr) {
                 for (int n = 0; n < list->num; n++) {
-                    if (list->keys) {
+                    if (list->keys != nullptr) {
                         delete[] list->keys[n];
                     }
-                    if (list->values) {
+                    if (list->values != nullptr) {
                         free_node(&list->values[n]);
                     }
                 }

@@ -21,7 +21,7 @@ auto bytesToString(qint64 bytes) -> QString
 class ControlWidget::ControlWidgetPrivate
 {
 public:
-    ControlWidgetPrivate(ControlWidget *q)
+    explicit ControlWidgetPrivate(ControlWidget *q)
         : q_ptr(q)
     {
         slider = new Slider(q_ptr);
@@ -38,7 +38,7 @@ public:
         cacheSpeedLabel = new QLabel(q_ptr);
 
         speedCbx = new QComboBox(q_ptr);
-        auto speedCbxView = new QListView(speedCbx);
+        auto *speedCbxView = new QListView(speedCbx);
         speedCbxView->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
         speedCbxView->setTextElideMode(Qt::ElideRight);
         speedCbxView->setAlternatingRowColors(true);
@@ -53,26 +53,26 @@ public:
         modelButton = new QPushButton(q_ptr);
     }
 
-    void setupUI()
+    void setupUI() const
     {
-        auto skipBackwardButton = new QToolButton(q_ptr);
+        auto *skipBackwardButton = new QToolButton(q_ptr);
         skipBackwardButton->setToolTip(QObject::tr("Previous"));
         skipBackwardButton->setIcon(q_ptr->style()->standardIcon(QStyle::SP_MediaSkipBackward));
         QObject::connect(skipBackwardButton, &QToolButton::clicked, q_ptr, &ControlWidget::previous);
 
-        auto skipForwardButton = new QToolButton(q_ptr);
+        auto *skipForwardButton = new QToolButton(q_ptr);
         skipForwardButton->setToolTip(QObject::tr("Next"));
         skipForwardButton->setIcon(q_ptr->style()->standardIcon(QStyle::SP_MediaSkipForward));
         QObject::connect(skipForwardButton, &QToolButton::clicked, q_ptr, &ControlWidget::next);
 
-        auto listButton = new QToolButton(q_ptr);
+        auto *listButton = new QToolButton(q_ptr);
         listButton->setText(QObject::tr("List"));
         QObject::connect(listButton, &QToolButton::clicked, q_ptr, &ControlWidget::showList);
 
-        auto volumeBotton = new QToolButton(q_ptr);
+        auto *volumeBotton = new QToolButton(q_ptr);
         volumeBotton->setIcon(q_ptr->style()->standardIcon(QStyle::SP_MediaVolume));
 
-        auto controlLayout = new QHBoxLayout;
+        auto *controlLayout = new QHBoxLayout;
         controlLayout->setSpacing(10);
         controlLayout->addWidget(skipBackwardButton);
         controlLayout->addWidget(playButton);
@@ -89,20 +89,20 @@ public:
         controlLayout->addWidget(modelButton);
         controlLayout->addWidget(listButton);
 
-        auto widget = new QWidget(q_ptr);
+        auto *widget = new QWidget(q_ptr);
         widget->setObjectName("wid");
         widget->setStyleSheet("QWidget#wid{background: rgba(255,255,255,0.3); border-radius:5px;}"
                               "QLabel{ color: white; }");
-        auto layout = new QVBoxLayout(widget);
+        auto *layout = new QVBoxLayout(widget);
         layout->setSpacing(15);
         layout->addWidget(slider);
         layout->addLayout(controlLayout);
 
-        auto l = new QHBoxLayout(q_ptr);
+        auto *l = new QHBoxLayout(q_ptr);
         l->addWidget(widget);
     }
 
-    void initModelButton()
+    void initModelButton() const
     {
         modelButton->setProperty("model", QMediaPlaylist::Sequential);
         QMetaObject::invokeMethod(q_ptr, &ControlWidget::onModelChanged, Qt::QueuedConnection);
@@ -132,7 +132,7 @@ ControlWidget::ControlWidget(QWidget *parent)
     d_ptr->initModelButton();
 }
 
-ControlWidget::~ControlWidget() {}
+ControlWidget::~ControlWidget() = default;
 
 void ControlWidget::setPause(bool pause)
 {
@@ -140,9 +140,18 @@ void ControlWidget::setPause(bool pause)
         style()->standardIcon(pause ? QStyle::SP_MediaPlay : QStyle::SP_MediaPause));
 }
 
-QPoint ControlWidget::sliderGlobalPos() const
+auto ControlWidget::sliderGlobalPos() const -> QPoint
 {
     return d_ptr->slider->mapToGlobal(d_ptr->slider->pos());
+}
+
+void ControlWidget::setChapters(const Mpv::ChapterList &chapters)
+{
+    QVector<qint64> nodes;
+    for (const auto &chapter : std::as_const(chapters)) {
+        nodes.append(chapter.milliseconds / 1000);
+    }
+    d_ptr->slider->setNodes(nodes);
 }
 
 void ControlWidget::setVolumeMax(int max)
@@ -160,22 +169,23 @@ void ControlWidget::setVolume(int value)
     d_ptr->volumeSlider->setValue(value);
 }
 
-int ControlWidget::volume() const
+auto ControlWidget::volume() const -> int
 {
     return d_ptr->volumeSlider->value();
 }
 
-void ControlWidget::onDurationChanged(double value)
+void ControlWidget::setDuration(double value)
 {
     auto str = QTime::fromMSecsSinceStartOfDay(value * 1000).toString("hh:mm:ss");
     d_ptr->durationLabel->setText(str);
     d_ptr->slider->blockSignals(true);
     d_ptr->slider->setRange(0, value);
     d_ptr->slider->blockSignals(false);
-    onPositionChanged(0);
+    d_ptr->slider->clearNodes();
+    setPosition(0);
 }
 
-void ControlWidget::onPositionChanged(double value)
+void ControlWidget::setPosition(double value)
 {
     auto str = QTime::fromMSecsSinceStartOfDay(value * 1000).toString("hh:mm:ss");
     d_ptr->positionLabel->setText(str);
@@ -185,7 +195,7 @@ void ControlWidget::onPositionChanged(double value)
     d_ptr->slider->blockSignals(false);
 }
 
-void ControlWidget::onCacheSpeedChanged(int64_t cache_speed)
+void ControlWidget::setCacheSpeed(qint64 cache_speed)
 {
     d_ptr->cacheSpeedLabel->setText(bytesToString(cache_speed) + "/S");
 }
@@ -205,7 +215,7 @@ void ControlWidget::onModelChanged()
     if (model > QMediaPlaylist::Random) {
         model = QMediaPlaylist::CurrentItemOnce;
     }
-    auto text = metaEnum.valueToKey(model);
+    const auto *text = metaEnum.valueToKey(model);
     d_ptr->modelButton->setText(text);
     d_ptr->modelButton->setToolTip(text);
     d_ptr->modelButton->setProperty("model", model);

@@ -57,7 +57,8 @@ MpvOpenglWidget::~MpvOpenglWidget()
 {
     makeCurrent();
     d_ptr->clean();
-    d_ptr->mpvPlayer->destroy();
+    d_ptr->mpvPlayer->quit();
+    doneCurrent();
 }
 
 void MpvOpenglWidget::initializeGL()

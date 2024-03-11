@@ -9,7 +9,7 @@ public:
     explicit PlayListView(QWidget *parent = nullptr);
     ~PlayListView() override;
 
-    [[nodiscard]] QModelIndexList selectedAllIndexs() const;
+    [[nodiscard]] auto selectedAllIndexs() const -> QModelIndexList;
 };
 
 #endif // PLAYLISTVIEW_HPP

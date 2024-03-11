@@ -33,12 +33,12 @@ public:
     void setPlaybackMode(PlaybackMode mode);
 
     [[nodiscard]] auto currentIndex() const -> int;
-    [[nodiscard]] QUrl currentMedia() const;
+    [[nodiscard]] auto currentMedia() const -> QUrl;
 
     [[nodiscard]] auto nextIndex(int steps = 1) const -> int;
     [[nodiscard]] auto previousIndex(int steps = 1) const -> int;
 
-    [[nodiscard]] QUrl media(int index) const;
+    [[nodiscard]] auto media(int index) const -> QUrl;
 
     [[nodiscard]] auto mediaCount() const -> int;
     [[nodiscard]] auto isEmpty() const -> bool;

@@ -24,10 +24,9 @@ public:
     [[nodiscard]] auto rowCount(const QModelIndex &parent = QModelIndex()) const -> int override;
     [[nodiscard]] auto columnCount(const QModelIndex &parent = QModelIndex()) const -> int override;
 
-    [[nodiscard]] QModelIndex index(int row,
-                                    int column,
-                                    const QModelIndex &parent = QModelIndex()) const override;
-    [[nodiscard]] QModelIndex parent(const QModelIndex &child) const override;
+    [[nodiscard]] auto index(int row, int column, const QModelIndex &parent = QModelIndex()) const
+        -> QModelIndex override;
+    [[nodiscard]] auto parent(const QModelIndex &child) const -> QModelIndex override;
 
     [[nodiscard]] auto data(const QModelIndex &index, int role = Qt::DisplayRole) const
         -> QVariant override;

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.21.1)
 
 if(CMAKE_HOST_WIN32)
-  list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.5.2\\msvc2019_64")
+  list(APPEND CMAKE_PREFIX_PATH "C:\\Qt\\6.6.2\\msvc2019_64")
 elseif(CMAKE_HOST_APPLE)
 
 elseif(CMAKE_HOST_UNIX)
-  list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/6.5.2/gcc_64")
+  list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/6.6.2/gcc_64")
 endif()
 
 project(
@@ -59,7 +59,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network Multimedia OpenGLWidgets)
 
 if(CMAKE_HOST_WIN32)
-  include_directories("C:\\3rd\\mpv\\include")
+  include_directories("C:\\3rd\\x64\\mpv\\include")
 elseif(CMAKE_HOST_APPLE)
   include_directories("/usr/local/include")
 endif()

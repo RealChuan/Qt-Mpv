@@ -7,8 +7,8 @@ CONFIG += link_pkgconfig debug
 #PKGCONFIG += mpv
 
 win32 {
-    INCLUDEPATH += C:/3rd/mpv/include
-    LIBS += C:/3rd/mpv/libmpv.dll.a
+    INCLUDEPATH += C:/3rd/x64/mpv/include
+    LIBS += C:/3rd/x64/mpv/libmpv.dll.a
 }
 
 macx {

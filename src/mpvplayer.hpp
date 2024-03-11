@@ -1,7 +1,7 @@
 #ifndef MPVPLAYER_HPP
 #define MPVPLAYER_HPP
 
-#include "trackinfo.hpp"
+#include "mediainfo.hpp"
 
 #include <QObject>
 
@@ -24,7 +24,7 @@ public:
     Q_ENUM(GpuApiType)
 
     explicit MpvPlayer(QObject *parent = nullptr);
-    ~MpvPlayer();
+    ~MpvPlayer() override;
 
     void initMpv(QWidget *widget);
 
@@ -37,12 +37,17 @@ public:
     [[nodiscard]] auto filepath() const -> QString;
     [[nodiscard]] auto filesize() const -> double;
 
-    [[nodiscard]] auto duration() const -> double; // s
-    [[nodiscard]] auto position() const -> double; // s
+    [[nodiscard]] auto duration() const -> double; // seconds
+    [[nodiscard]] auto position() const -> double; // seconds
 
+    [[nodiscard]] auto chapterList() const -> ChapterList;
+
+    [[nodiscard]] auto videoTrackList() const -> TraskInfoList;
     [[nodiscard]] auto audioTrackList() const -> TraskInfoList;
     [[nodiscard]] auto subTrackList() const -> TraskInfoList;
 
+    void setVideoTrack(int vid);
+    void blockVideoTrack();
     void setAudioTrack(int aid);
     void blockAudioTrack();
     void setSubTrack(int sid);
@@ -55,8 +60,8 @@ public:
 
     void setCache(bool cache);
     void setCacheSeconds(int seconds);
-    [[nodiscard]] auto cacheSpeed() const -> double; // s
-    void setCacheSpeed(double speed);                // bytes / s
+    [[nodiscard]] auto cacheSpeed() const -> double; // seconds
+    void setCacheSpeed(double speed);                // bytes / seconds
 
     void setUseGpu(bool use);
     void setGpuApi(GpuApiType type);
@@ -71,19 +76,23 @@ public:
     void setSpeed(double speed);
     [[nodiscard]] auto speed() const -> double;
 
+    void setSubtitleDelay(double delay); // seconds
+    auto subtitleDelay() const -> double;
+
     void pauseAsync();
     void pauseSync(bool state);
     auto isPaused() -> bool;
 
     void abortAllAsyncCommands();
 
-    void destroy();
+    void quit();
 
     auto mpv_handler() -> mpv_handle *;
 
 signals:
     void fileLoaded();
     void fileFinished();
+    void chapterChanged();
     void trackChanged();
     void durationChanged(double duration); // ms
     void positionChanged(double position); // ms

@@ -9,8 +9,8 @@
 #include "playlistview.hpp"
 #include "previewwidget.hpp"
 #include "qmediaplaylist.h"
+#include "subtitledelaydialog.hpp"
 #include "titlewidget.hpp"
-#include "trackinfo.hpp"
 
 #include <QtWidgets>
 
@@ -21,13 +21,13 @@ static auto isPlaylist(const QUrl &url) -> bool // Check for ".m3u" playlists.
     }
     const QFileInfo fileInfo(url.toLocalFile());
     return fileInfo.exists()
-           && !fileInfo.suffix().compare(QLatin1String("m3u"), Qt::CaseInsensitive);
+           && (fileInfo.suffix().compare(QLatin1String("m3u"), Qt::CaseInsensitive) == 0);
 }
 
 class MainWindow::MainWindowPrivate
 {
 public:
-    MainWindowPrivate(MainWindow *q)
+    explicit MainWindowPrivate(MainWindow *q)
         : q_ptr(q)
     {
         mpvPlayer = new Mpv::MpvPlayer(q_ptr);
@@ -60,10 +60,19 @@ public:
         //playlistView->setMaximumWidth(250);
 
         menu = new QMenu(q_ptr);
-        gpuAction = new QAction(QObject::tr("H/W"), q_ptr);
+        gpuAction = new QAction(QCoreApplication::translate("MainWindowPrivate", "H/W"), q_ptr);
         gpuAction->setCheckable(true);
-        audioTracksMenu = new QMenu(QObject::tr("Select audio track"), q_ptr);
-        subTracksMenu = new QMenu(QObject::tr("Select subtitle track"), q_ptr);
+        videoMenu = new QMenu(QCoreApplication::translate("MainWindowPrivate", "Video"), q_ptr);
+        audioMenu = new QMenu(QCoreApplication::translate("MainWindowPrivate", "Audio"), q_ptr);
+        subMenu = new QMenu(QCoreApplication::translate("MainWindowPrivate", "Subtitles"), q_ptr);
+        subDelayAction = new QAction(QCoreApplication::translate("MainWindowPrivate", "Delay"),
+                                     q_ptr);
+
+        loadSubTitlesAction = new QAction(QCoreApplication::translate("MainWindowPrivate",
+                                                                      "Load Subtitles"),
+                                          q_ptr);
+        videoTracksGroup = new QActionGroup(q_ptr);
+        videoTracksGroup->setExclusive(true);
         audioTracksGroup = new QActionGroup(q_ptr);
         audioTracksGroup->setExclusive(true);
         subTracksGroup = new QActionGroup(q_ptr);
@@ -74,17 +83,64 @@ public:
         initShortcut();
     }
 
+    void resetTrackMenu()
+    {
+        auto actions = audioTracksGroup->actions();
+        for (auto *action : actions) {
+            audioTracksGroup->removeAction(action);
+            delete action;
+        }
+        actions = videoTracksGroup->actions();
+        for (auto *action : actions) {
+            videoTracksGroup->removeAction(action);
+            delete action;
+        }
+        actions = subTracksGroup->actions();
+        for (auto *action : actions) {
+            subTracksGroup->removeAction(action);
+            delete action;
+        }
+
+        if (!audioTracksMenuPtr.isNull()) {
+            delete audioTracksMenuPtr.data();
+        }
+        if (!videoTracksMenuPtr.isNull()) {
+            delete videoTracksMenuPtr.data();
+        }
+        if (!subTracksMenuPtr.isNull()) {
+            delete subTracksMenuPtr.data();
+        }
+        audioTracksMenuPtr = new QMenu(QCoreApplication::translate("MainWindowPrivate",
+                                                                   "Select audio track"),
+                                       q_ptr);
+        videoTracksMenuPtr = new QMenu(QCoreApplication::translate("MainWindowPrivate",
+                                                                   "Select video track"),
+                                       q_ptr);
+        subTracksMenuPtr = new QMenu(QCoreApplication::translate("MainWindowPrivate",
+                                                                 "Select subtitle track"),
+                                     q_ptr);
+        subTracksMenuPtr->addAction(loadSubTitlesAction);
+        subTracksMenuPtr->addSeparator();
+
+        videoMenu->addMenu(videoTracksMenuPtr.data());
+        audioMenu->addMenu(audioTracksMenuPtr.data());
+        subMenu->addMenu(subTracksMenuPtr.data());
+        subMenu->addAction(subDelayAction);
+    }
+
     void initShortcut()
     {
         new QShortcut(QKeySequence::MoveToNextChar, q_ptr, q_ptr, [this] {
             mpvPlayer->seekRelative(5);
-            titleWidget->setText(tr("Fast forward: 5 seconds"));
+            titleWidget->setText(
+                QCoreApplication::translate("MainWindowPrivate", "Fast forward: 5 seconds"));
             titleWidget->setAutoHide(3000);
             setTitleWidgetGeometry(true);
         });
         new QShortcut(QKeySequence::MoveToPreviousChar, q_ptr, q_ptr, [this] {
             mpvPlayer->seekRelative(-5);
-            titleWidget->setText(tr("Fast return: 5 seconds"));
+            titleWidget->setText(
+                QCoreApplication::translate("MainWindowPrivate", "Fast return: 5 seconds"));
             titleWidget->setAutoHide(3000);
             setTitleWidgetGeometry(true);
         });
@@ -97,7 +153,7 @@ public:
         new QShortcut(Qt::Key_Space, q_ptr, q_ptr, [this] { pause(); });
     }
 
-    void setupUI()
+    void setupUI() const
     {
 #ifndef Q_OS_WIN
         auto controlLayout = new QHBoxLayout;
@@ -110,7 +166,7 @@ public:
         layout->addLayout(controlLayout);
 #endif
 
-        auto splitter = new QSplitter(q_ptr);
+        auto *splitter = new QSplitter(q_ptr);
         splitter->setHandleWidth(0);
         splitter->addWidget(mpvWidget);
         splitter->addWidget(playlistView);
@@ -157,7 +213,7 @@ public:
 #endif
     }
 
-    void pause() { mpvPlayer->pauseAsync(); }
+    void pause() const { mpvPlayer->pauseAsync(); }
 
     MainWindow *q_ptr;
 
@@ -178,10 +234,20 @@ public:
 
     QMenu *menu;
     QAction *gpuAction;
-    QMenu *audioTracksMenu;
-    QMenu *subTracksMenu;
+
+    QMenu *videoMenu;
+    QPointer<QMenu> videoTracksMenuPtr;
+    QActionGroup *videoTracksGroup;
+
+    QMenu *audioMenu;
+    QPointer<QMenu> audioTracksMenuPtr;
     QActionGroup *audioTracksGroup;
+
+    QMenu *subMenu;
+    QAction *subDelayAction;
+    QPointer<QMenu> subTracksMenuPtr;
     QActionGroup *subTracksGroup;
+    QAction *loadSubTitlesAction;
 
     QMenu *playListMenu;
 };
@@ -212,8 +278,7 @@ void MainWindow::onOpenLocalMedia()
 {
     const auto path = QStandardPaths::standardLocations(QStandardPaths::MoviesLocation)
                           .value(0, QDir::homePath());
-    const auto filter = tr("Media (*.mp4 *.flv *.ts *.avi *.rmvb *.mkv *.wmv *.mp3 *.wav *.flac "
-                           "*.ape *.m4a *.aac *.ogg *.ac3 *.mpg)");
+    const auto filter = tr("Media (*)");
     const auto urls = QFileDialog::getOpenFileUrls(this,
                                                    tr("Open Media"),
                                                    QUrl::fromUserInput(path),
@@ -249,28 +314,51 @@ void MainWindow::onLoadSubtitleFiles()
     const auto filePaths = QFileDialog::getOpenFileNames(this,
                                                          tr("Open File"),
                                                          path,
-                                                         tr("Subtitle (*.srt *.ass)"));
+                                                         tr("Subtitle(*)"));
     if (filePaths.isEmpty()) {
         return;
     }
     d_ptr->mpvPlayer->addSub(filePaths);
 }
 
+void MainWindow::onShowSubtitleDelayDialog()
+{
+    SubtitleDelayDialog dialog(this);
+    dialog.setDelay(d_ptr->mpvPlayer->subtitleDelay());
+    connect(&dialog, &SubtitleDelayDialog::delayChanged, d_ptr->mpvPlayer, [&] {
+        d_ptr->mpvPlayer->setSubtitleDelay(dialog.delay());
+    });
+    dialog.exec();
+}
+
 void MainWindow::onFileLoaded()
 {
     setWindowTitle(d_ptr->mpvPlayer->filename());
-    d_ptr->controlWidget->onDurationChanged(d_ptr->mpvPlayer->duration());
+    d_ptr->controlWidget->setDuration(d_ptr->mpvPlayer->duration());
 }
 
 void MainWindow::onTrackChanged()
 {
-    auto audioTrackList = d_ptr->mpvPlayer->audioTrackList();
-    qDeleteAll(d_ptr->audioTracksGroup->actions());
-    for (const auto &item : qAsConst(audioTrackList)) {
-        auto action = new QAction(item.text(), this);
+    d_ptr->resetTrackMenu();
+
+    auto videoTrackList = d_ptr->mpvPlayer->videoTrackList();
+    for (const auto &item : std::as_const(videoTrackList)) {
+        auto *action = new QAction(item.text(), this);
         action->setData(QVariant::fromValue(item));
         action->setCheckable(true);
-        d_ptr->audioTracksMenu->addAction(action);
+        d_ptr->videoTracksMenuPtr->addAction(action);
+        d_ptr->videoTracksGroup->addAction(action);
+        if (item.selected) {
+            action->setChecked(true);
+        }
+    }
+
+    auto audioTrackList = d_ptr->mpvPlayer->audioTrackList();
+    for (const auto &item : std::as_const(audioTrackList)) {
+        auto *action = new QAction(item.text(), this);
+        action->setData(QVariant::fromValue(item));
+        action->setCheckable(true);
+        d_ptr->audioTracksMenuPtr->addAction(action);
         d_ptr->audioTracksGroup->addAction(action);
         if (item.selected) {
             action->setChecked(true);
@@ -278,17 +366,21 @@ void MainWindow::onTrackChanged()
     }
 
     auto subTrackList = d_ptr->mpvPlayer->subTrackList();
-    qDeleteAll(d_ptr->subTracksGroup->actions());
-    for (const auto &item : qAsConst(subTrackList)) {
-        auto action = new QAction(item.text(), this);
+    for (const auto &item : std::as_const(subTrackList)) {
+        auto *action = new QAction(item.text(), this);
         action->setData(QVariant::fromValue(item));
         action->setCheckable(true);
-        d_ptr->subTracksMenu->addAction(action);
+        d_ptr->subTracksMenuPtr->addAction(action);
         d_ptr->subTracksGroup->addAction(action);
         if (item.selected) {
             action->setChecked(true);
         }
     }
+}
+
+void MainWindow::onChapterChanged()
+{
+    d_ptr->controlWidget->setChapters(d_ptr->mpvPlayer->chapterList());
 }
 
 void MainWindow::onRenderChanged(QAction *action)
@@ -347,27 +439,27 @@ void MainWindow::playlistPositionChanged(int currentItem)
     }
 }
 
-bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+auto MainWindow::eventFilter(QObject *watched, QEvent *event) -> bool
 {
     if (watched == d_ptr->mpvWidget) {
         switch (event->type()) {
         case QEvent::DragEnter: {
-            auto e = static_cast<QDragEnterEvent *>(event);
+            auto *e = static_cast<QDragEnterEvent *>(event);
             e->acceptProposedAction();
         } break;
         case QEvent::DragMove: {
-            auto e = static_cast<QDragMoveEvent *>(event);
+            auto *e = static_cast<QDragMoveEvent *>(event);
             e->acceptProposedAction();
         } break;
         case QEvent::Drop: {
-            auto e = static_cast<QDropEvent *>(event);
+            auto *e = static_cast<QDropEvent *>(event);
             QList<QUrl> urls = e->mimeData()->urls();
             if (!urls.isEmpty()) {
                 addToPlaylist(urls);
             }
         } break;
         case QEvent::ContextMenu: {
-            auto e = static_cast<QContextMenuEvent *>(event);
+            auto *e = static_cast<QContextMenuEvent *>(event);
             d_ptr->menu->exec(e->globalPos());
         } break;
 #ifdef Q_OS_WIN
@@ -400,7 +492,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
     } else if (watched == d_ptr->playlistView) {
         switch (event->type()) {
         case QEvent::ContextMenu: {
-            auto e = static_cast<QContextMenuEvent *>(event);
+            auto *e = static_cast<QContextMenuEvent *>(event);
             d_ptr->playListMenu->exec(e->globalPos());
         } break;
         default: break;
@@ -421,7 +513,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         case QEvent::Hide: d_ptr->controlWidget->hide(); break;
         case QEvent::HoverMove:
             if (d_ptr->globalControlWidgetGeometry.isValid()) {
-                auto e = static_cast<QHoverEvent *>(event);
+                auto *e = static_cast<QHoverEvent *>(event);
                 bool contain = d_ptr->globalControlWidgetGeometry.contains(
                     e->globalPosition().toPoint());
                 bool isVisible = d_ptr->controlWidget->isVisible();
@@ -432,7 +524,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 }
             }
             if (d_ptr->globalTitlelWidgetGeometry.isValid() && isFullScreen()) {
-                auto e = static_cast<QHoverEvent *>(event);
+                auto *e = static_cast<QHoverEvent *>(event);
                 bool contain = d_ptr->globalTitlelWidgetGeometry.contains(
                     e->globalPosition().toPoint());
                 bool isVisible = d_ptr->titleWidget->isVisible();
@@ -493,11 +585,12 @@ void MainWindow::buildConnect()
             &Mpv::MpvPlayer::fileFinished,
             d_ptr->playlistModel->playlist(),
             &QMediaPlaylist::next);
+    connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::chapterChanged, this, &MainWindow::onChapterChanged);
     connect(d_ptr->mpvPlayer, &Mpv::MpvPlayer::trackChanged, this, &MainWindow::onTrackChanged);
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::positionChanged,
             d_ptr->controlWidget,
-            &ControlWidget::onPositionChanged);
+            &ControlWidget::setPosition);
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::mpvLogMessage,
             d_ptr->logWindow,
@@ -508,7 +601,7 @@ void MainWindow::buildConnect()
     connect(d_ptr->mpvPlayer,
             &Mpv::MpvPlayer::cacheSpeedChanged,
             d_ptr->controlWidget,
-            &ControlWidget::onCacheSpeedChanged);
+            &ControlWidget::setCacheSpeed);
 
     connect(d_ptr->controlWidget,
             &ControlWidget::previous,
@@ -552,7 +645,7 @@ void MainWindow::buildConnect()
             d_ptr->playlistModel->playlist(),
             [this](int model) {
                 d_ptr->playlistModel->playlist()->setPlaybackMode(
-                    QMediaPlaylist::PlaybackMode(model));
+                    static_cast<QMediaPlaylist::PlaybackMode>(model));
             });
     connect(d_ptr->controlWidget, &ControlWidget::showList, d_ptr->playlistView, [this] {
         d_ptr->playlistView->setVisible(!d_ptr->playlistView->isVisible());
@@ -569,7 +662,6 @@ void MainWindow::initMenu()
 {
     d_ptr->menu->addAction(tr("Open Local Media"), this, &MainWindow::onOpenLocalMedia);
     d_ptr->menu->addAction(tr("Open Web Media"), this, &MainWindow::onOpenWebMedia);
-    d_ptr->menu->addAction(tr("Load Subtitle Files"), this, &MainWindow::onLoadSubtitleFiles);
 
     d_ptr->menu->addAction(d_ptr->gpuAction);
     connect(d_ptr->gpuAction, &QAction::toggled, d_ptr->mpvPlayer, [this](bool checked) {
@@ -577,13 +669,13 @@ void MainWindow::initMenu()
     });
     d_ptr->gpuAction->setChecked(true);
 #ifdef Q_OS_WIN
-    auto menu = new QMenu(tr("Render"), this);
-    auto actionGroup = new QActionGroup(this);
+    auto *menu = new QMenu(tr("Render"), this);
+    auto *actionGroup = new QActionGroup(this);
     actionGroup->setExclusive(true);
     auto metaEnum = QMetaEnum::fromType<Mpv::MpvPlayer::GpuApiType>();
     for (int i = 0; i < metaEnum.keyCount(); i++) {
         auto value = metaEnum.value(i);
-        auto action = new QAction(metaEnum.valueToKey(value), this);
+        auto *action = new QAction(metaEnum.valueToKey(value), this);
         action->setData(value);
         action->setCheckable(true);
         actionGroup->addAction(action);
@@ -593,8 +685,14 @@ void MainWindow::initMenu()
     connect(actionGroup, &QActionGroup::triggered, this, &MainWindow::onRenderChanged);
     d_ptr->menu->addMenu(menu);
 #endif
-    d_ptr->menu->addMenu(d_ptr->audioTracksMenu);
-    d_ptr->menu->addMenu(d_ptr->subTracksMenu);
+    d_ptr->menu->addMenu(d_ptr->videoMenu);
+    d_ptr->menu->addMenu(d_ptr->audioMenu);
+    d_ptr->menu->addMenu(d_ptr->subMenu);
+
+    connect(d_ptr->videoTracksGroup, &QActionGroup::triggered, this, [this](QAction *action) {
+        auto data = action->data().value<Mpv::TraskInfo>();
+        d_ptr->mpvPlayer->setVideoTrack(data.id);
+    });
     connect(d_ptr->audioTracksGroup, &QActionGroup::triggered, this, [this](QAction *action) {
         auto data = action->data().value<Mpv::TraskInfo>();
         d_ptr->mpvPlayer->setAudioTrack(data.id);
@@ -603,6 +701,11 @@ void MainWindow::initMenu()
         auto data = action->data().value<Mpv::TraskInfo>();
         d_ptr->mpvPlayer->setSubTrack(data.id);
     });
+    connect(d_ptr->loadSubTitlesAction, &QAction::triggered, this, &MainWindow::onLoadSubtitleFiles);
+    connect(d_ptr->subDelayAction,
+            &QAction::triggered,
+            this,
+            &MainWindow::onShowSubtitleDelayDialog);
 #ifdef Q_OS_MACOS
     d_ptr->menu->setTitle(tr("Menu"));
     menuBar()->addMenu(d_ptr->menu);
@@ -619,7 +722,7 @@ void MainWindow::initPlayListMenu()
             std::sort(indexs.begin(), indexs.end(), [&](QModelIndex left, QModelIndex right) {
                 return left.row() > right.row();
             });
-            for (const auto &index : qAsConst(indexs)) {
+            for (const auto &index : std::as_const(indexs)) {
                 d_ptr->playlistModel->playlist()->removeMedia(index.row());
             }
         });
@@ -630,9 +733,9 @@ void MainWindow::initPlayListMenu()
 
 void MainWindow::addToPlaylist(const QList<QUrl> &urls)
 {
-    auto playlist = d_ptr->playlistModel->playlist();
+    auto *playlist = d_ptr->playlistModel->playlist();
     const int previousMediaCount = playlist->mediaCount();
-    for (auto &url : urls) {
+    for (const auto &url : std::as_const(urls)) {
         if (isPlaylist(url)) {
             playlist->load(url);
         } else {

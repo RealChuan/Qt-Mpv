@@ -75,6 +75,14 @@ public:
                     auto d = QJsonDocument::fromVariant(v);
                     emit owner->mpvLogMessage("Change property " + QString(prop->name) + ":\n");
                     emit owner->mpvLogMessage(d.toJson());
+
+                    chapterList.clear();
+                    auto array = d.array();
+                    for (auto iter = array.cbegin(); iter != array.cend(); iter++) {
+                        auto obj = (*iter).toObject();
+                        chapterList.append(Chapter(obj));
+                    }
+                    emit owner->chapterChanged();
                 }
             } else if (strcmp(prop->name, "track-list") == 0) {
                 // Dump the properties as JSON for demo purposes.
@@ -85,6 +93,7 @@ public:
                     emit owner->mpvLogMessage("Change property " + QString(prop->name) + ":\n");
                     emit owner->mpvLogMessage(d.toJson());
 
+                    videoTrackList.clear();
                     audioTrackList.clear();
                     subTrackList.clear();
                     auto array = d.array();
@@ -93,6 +102,8 @@ public:
                         auto traskInfo = TraskInfo(obj);
                         if (obj.value("type") == "audio") {
                             audioTrackList.append(traskInfo);
+                        } else if (obj.value("type") == "video") {
+                            videoTrackList.append(traskInfo);
                         } else if (obj.value("type") == "sub") {
                             subTrackList.append(traskInfo);
                         }
@@ -130,10 +141,7 @@ public:
             emit owner->mpvLogMessage(QString::fromStdString(ss.str()));
             break;
         }
-        case MPV_EVENT_SHUTDOWN:
-            mpv_terminate_destroy(mpv);
-            mpv = nullptr;
-            break;
+        case MPV_EVENT_SHUTDOWN: destroy(); break;
         case MPV_EVENT_FILE_LOADED: emit owner->fileLoaded(); break;
         case MPV_EVENT_END_FILE: {
             auto *prop = static_cast<mpv_event_end_file *>(event->data);
@@ -150,8 +158,10 @@ public:
     MpvPlayer *owner;
 
     struct mpv_handle *mpv = nullptr;
+    TraskInfoList videoTrackList;
     TraskInfoList audioTrackList;
     TraskInfoList subTrackList;
+    ChapterList chapterList;
     double position = 0;
     int64_t cache_speed = 0;
 };
@@ -167,7 +177,7 @@ MpvPlayer::~MpvPlayer() = default;
 
 void MpvPlayer::openMedia(const QString &filePath)
 {
-    if (!d_ptr->mpv) {
+    if (d_ptr->mpv == nullptr) {
         return;
     }
     const QByteArray c_filename = filePath.toUtf8();
@@ -212,6 +222,16 @@ auto MpvPlayer::position() const -> double
     return mpv::qt::get_property(d_ptr->mpv, "playback-time").toDouble();
 }
 
+auto MpvPlayer::chapterList() const -> ChapterList
+{
+    return d_ptr->chapterList;
+}
+
+auto MpvPlayer::videoTrackList() const -> TraskInfoList
+{
+    return d_ptr->videoTrackList;
+}
+
 auto MpvPlayer::audioTrackList() const -> TraskInfoList
 {
     return d_ptr->audioTrackList;
@@ -220,6 +240,17 @@ auto MpvPlayer::audioTrackList() const -> TraskInfoList
 auto MpvPlayer::subTrackList() const -> TraskInfoList
 {
     return d_ptr->subTrackList;
+}
+
+void MpvPlayer::setVideoTrack(int vid)
+{
+    qInfo() << "vid: " << vid;
+    mpv::qt::set_property_async(d_ptr->mpv, "vid", vid);
+}
+
+void MpvPlayer::blockVideoTrack()
+{
+    mpv::qt::set_property_async(d_ptr->mpv, "vid", "no");
 }
 
 void MpvPlayer::setAudioTrack(int aid)
@@ -246,14 +277,14 @@ void MpvPlayer::blockSubTrack()
 
 void MpvPlayer::addAudio(const QStringList &paths)
 {
-    for (const auto &path : qAsConst(paths)) {
+    for (const auto &path : std::as_const(paths)) {
         mpv::qt::command_async(d_ptr->mpv, QVariantList() << "audio-add" << path);
     }
 }
 
 void MpvPlayer::addSub(const QStringList &paths)
 {
-    for (const auto &path : qAsConst(paths)) {
+    for (const auto &path : std::as_const(paths)) {
         mpv::qt::command_async(d_ptr->mpv, QVariantList() << "sub-add" << path);
     }
 }
@@ -338,6 +369,17 @@ auto MpvPlayer::speed() const -> double
     return mpv::qt::get_property(d_ptr->mpv, "speed").toDouble();
 }
 
+void MpvPlayer::setSubtitleDelay(double delay)
+{
+    qInfo() << "sub-delay: " << delay;
+    mpv::qt::set_property_async(d_ptr->mpv, "sub-delay", delay);
+}
+
+auto MpvPlayer::subtitleDelay() const -> double
+{
+    return mpv::qt::get_property(d_ptr->mpv, "sub-delay").toDouble();
+}
+
 void MpvPlayer::pauseAsync()
 {
     auto state = !isPaused();
@@ -368,9 +410,9 @@ void MpvPlayer::abortAllAsyncCommands()
     mpv::qt::command_abort_async(d_ptr->mpv);
 }
 
-void MpvPlayer::destroy()
+void MpvPlayer::quit()
 {
-    d_ptr->destroy();
+    mpv::qt::set_property(d_ptr->mpv, "quit", true);
 }
 
 auto MpvPlayer::mpv_handler() -> mpv_handle *
@@ -381,8 +423,8 @@ auto MpvPlayer::mpv_handler() -> mpv_handle *
 void MpvPlayer::onMpvEvents()
 {
     // Process all events, until the event queue is empty.
-    while (d_ptr->mpv) {
-        auto event = mpv_wait_event(d_ptr->mpv, 0);
+    while (d_ptr->mpv != nullptr) {
+        auto *event = mpv_wait_event(d_ptr->mpv, 0);
         if (event->event_id == MPV_EVENT_NONE) {
             break;
         }

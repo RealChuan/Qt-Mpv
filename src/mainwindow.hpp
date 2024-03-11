@@ -14,8 +14,10 @@ private slots:
     void onOpenLocalMedia();
     void onOpenWebMedia();
     void onLoadSubtitleFiles();
+    void onShowSubtitleDelayDialog();
     void onFileLoaded();
     void onTrackChanged();
+    void onChapterChanged();
     void onRenderChanged(QAction *action);
 
     void onPreview(int pos, int value);

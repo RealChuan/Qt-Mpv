@@ -1,5 +1,5 @@
-#ifndef TRACKINFO_HPP
-#define TRACKINFO_HPP
+#ifndef MEDIAINFO_HPP
+#define MEDIAINFO_HPP
 
 #include <QtCore>
 
@@ -28,12 +28,29 @@ struct TraskInfo
     QString title;
     QString type;
     bool visual_impaired = false;
+
+    QSize size = QSize(0, 0);
+    double fps = 0.0;
+
+    int channelCount = 0;
+    int samplerate = 0;
 };
+
+using TraskInfoList = QList<TraskInfo>;
+
+struct Chapter
+{
+    Chapter() = default;
+    explicit Chapter(const QJsonObject &obj);
+
+    QString title;
+    qint64 milliseconds;
+};
+
+using ChapterList = QList<Chapter>;
 
 } // namespace Mpv
 
 Q_DECLARE_METATYPE(Mpv::TraskInfo)
 
-using TraskInfoList = QList<Mpv::TraskInfo>;
-
-#endif // TRACKINFO_HPP
+#endif // MEDIAINFO_HPP

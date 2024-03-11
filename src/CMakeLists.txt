@@ -4,6 +4,8 @@ set(PROJECT_SOURCES
     main.cc
     mainwindow.cc
     mainwindow.hpp
+    mediainfo.cc
+    mediainfo.hpp
     mpvlogwindow.cc
     mpvlogwindow.hpp
     mpvopenglwidget.cc
@@ -28,16 +30,16 @@ set(PROJECT_SOURCES
     qthelper.hpp
     slider.cpp
     slider.h
+    subtitledelaydialog.cc
+    subtitledelaydialog.hpp
     titlewidget.cc
-    titlewidget.hpp
-    trackinfo.cc
-    trackinfo.hpp)
+    titlewidget.hpp)
 
 qt_add_executable(Qt-Mpv MANUAL_FINALIZATION ${PROJECT_SOURCES})
 target_link_libraries(Qt-Mpv PRIVATE Qt6::Widgets Qt6::Multimedia Qt6::Network
                                      Qt6::OpenGLWidgets)
 if(CMAKE_HOST_WIN32)
-  target_link_libraries(Qt-Mpv PRIVATE C:\\3rd\\mpv\\libmpv.dll.a)
+  target_link_libraries(Qt-Mpv PRIVATE C:\\3rd\\x64\\mpv\\libmpv.dll.a)
 elseif(CMAKE_HOST_APPLE)
   target_link_directories(Qt-Mpv PRIVATE /usr/lib)
   target_link_directories(Qt-Mpv PRIVATE /usr/local/lib)
